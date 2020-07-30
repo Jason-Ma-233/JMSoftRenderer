@@ -116,7 +116,7 @@ public:
 	}
 
 	// return a transposed copy of the current matrix as a new matrix
-	Matrix44 transposed() const {
+	inline Matrix44 transposed() const {
 #if 0
 		Matrix44 t;
 		for (uint8_t i = 0; i < 4; ++i) {
@@ -147,7 +147,7 @@ public:
 	}
 
 	// transpose itself
-	Matrix44& transpose() {
+	inline Matrix44& transpose() {
 		Matrix44 tmp(x[0][0],
 			x[1][0],
 			x[2][0],
@@ -180,21 +180,21 @@ public:
 	//
 	// The coordinate w is more often than not equals to 1, but it can be different than
 	// 1 especially when the matrix is projective matrix (perspective projection matrix).
-	void apply(const Vector4& src, Vector4& dst) const {
+	inline void apply(const Vector4& src, Vector4& dst) const {
 		dst.x = src[0] * x[0][0] + src[1] * x[1][0] + src[2] * x[2][0] + src[3] * x[3][0];
 		dst.y = src[0] * x[0][1] + src[1] * x[1][1] + src[2] * x[2][1] + src[3] * x[3][1];
 		dst.z = src[0] * x[0][2] + src[1] * x[1][2] + src[2] * x[2][2] + src[3] * x[3][2];
 		dst.w = src[0] * x[0][3] + src[1] * x[1][3] + src[2] * x[2][3] + src[3] * x[3][3];
 	}
 
-	void apply(const Vector3& src, Vector4& dst) const {
+	inline void apply(const Vector3& src, Vector4& dst) const {
 		dst.x = src[0] * x[0][0] + src[1] * x[1][0] + src[2] * x[2][0] + x[3][0];
 		dst.y = src[0] * x[0][1] + src[1] * x[1][1] + src[2] * x[2][1] + x[3][1];
 		dst.z = src[0] * x[0][2] + src[1] * x[1][2] + src[2] * x[2][2] + x[3][2];
 		dst.w = src[0] * x[0][3] + src[1] * x[1][3] + src[2] * x[2][3] + x[3][3];
 	}
 
-	void apply(const Vector3& src, Vector3& dst) const {
+	inline void apply(const Vector3& src, Vector3& dst) const {
 		dst.x = src[0] * x[0][0] + src[1] * x[1][0] + src[2] * x[2][0] + x[3][0];
 		dst.y = src[0] * x[0][1] + src[1] * x[1][1] + src[2] * x[2][1] + x[3][1];
 		dst.z = src[0] * x[0][2] + src[1] * x[1][2] + src[2] * x[2][2] + x[3][2];
@@ -204,12 +204,12 @@ public:
 		dst.z /= w;
 	}
 
-	Vector3 apply(const Vector3& src) const {
+	inline Vector3 apply(const Vector3& src) const {
 		Vector3 dst;
 		apply(src, dst);
 		return dst;
 	}
-	Vector4 apply(const Vector4& src) const {
+	inline Vector4 apply(const Vector4& src) const {
 		Vector4 dst;
 		apply(src, dst);
 		return dst;
@@ -219,19 +219,19 @@ public:
 	// with the previous method (to compute a point-matrix multiplication). We don't use
 	// the coefficients in the matrix that account for translation (x[3][0], x[3][1], x[3][2])
 	// and we don't compute w.
-	void applyDir(const Vector3& src, Vector3& dst) const {
+	inline void applyDir(const Vector3& src, Vector3& dst) const {
 		dst.x = src[0] * x[0][0] + src[1] * x[1][0] + src[2] * x[2][0];
 		dst.y = src[0] * x[0][1] + src[1] * x[1][1] + src[2] * x[2][1];
 		dst.z = src[0] * x[0][2] + src[1] * x[1][2] + src[2] * x[2][2];
 	}
 
-	Vector3 applyDir(const Vector3& src) const {
+	inline Vector3 applyDir(const Vector3& src) const {
 		Vector3 dst;
 		applyDir(src, dst);
 		return dst;
 	}
 
-	void applyDir(const Vector3& src, Vector4& dst) const {
+	inline void applyDir(const Vector3& src, Vector4& dst) const {
 		dst.x = src[0] * x[0][0] + src[1] * x[1][0] + src[2] * x[2][0];
 		dst.y = src[0] * x[0][1] + src[1] * x[1][1] + src[2] * x[2][1];
 		dst.z = src[0] * x[0][2] + src[1] * x[1][2] + src[2] * x[2][2];
@@ -333,7 +333,7 @@ public:
 		return *this;
 	}
 
-	Matrix44& setIdentity() {
+	inline Matrix44& setIdentity() {
 		x[0][0] = x[1][1] = x[2][2] = x[3][3] = 1.0f;
 		x[0][1] = x[0][2] = x[0][3] = 0.0f;
 		x[1][0] = x[1][2] = x[1][3] = 0.0f;
@@ -342,7 +342,7 @@ public:
 		return *this;
 	}
 
-	Matrix44& setZero() {
+	inline Matrix44& setZero() {
 		x[0][0] = x[0][1] = x[0][2] = x[0][3] = 0.0f;
 		x[1][0] = x[1][1] = x[1][2] = x[1][3] = 0.0f;
 		x[2][0] = x[2][1] = x[2][2] = x[2][3] = 0.0f;
@@ -350,13 +350,13 @@ public:
 		return *this;
 	}
 
-	Matrix44& translate(float x, float y, float z) {
+	inline Matrix44& translate(float x, float y, float z) {
 		Matrix44 m;
 		m[3][0] = x; m[3][1] = y; m[3][2] = z;
 		return *this *= m;
 	}
 
-	Matrix44& scale(float x, float y, float z) {
+	inline Matrix44& scale(float x, float y, float z) {
 		Matrix44 m;
 		m[0][0] = x; m[1][1] = y; m[2][2] = z;
 		return *this *= m;
@@ -388,7 +388,7 @@ public:
 		return *this *= m;
 	}
 
-	Matrix44& setPerspective(float fov, float aspect, float zNear, float zFar) {
+	inline Matrix44& setPerspective(float fov, float aspect, float zNear, float zFar) {
 		float fax = 1.0f / tan(Math::DEGREE_TO_RADIUS * fov * 0.5f);
 		setZero();
 		x[0][0] = fax / aspect;

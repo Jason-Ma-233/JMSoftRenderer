@@ -7,10 +7,12 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <omp.h>
 
 #ifndef _DEBUG
 #define NDEBUG
 #endif
+
 #include <cassert>
 
 #include "Math.h"
