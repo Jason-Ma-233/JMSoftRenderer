@@ -1,14 +1,17 @@
 #pragma once
 
+#ifndef _MATRIX44_H_
+#define _MATRIX44_H_
+
 #include "Vector.h"
 
-class Matrix {
+class Matrix44 {
 public:
 	float x[4][4] = { { 1,0,0,0 },{ 0,1,0,0 },{ 0,0,1,0 },{ 0,0,0,1 } };
 
-	Matrix() {}
+	Matrix44() {}
 
-	Matrix(float a, float b, float c, float d, float e, float f, float g, float h,
+	Matrix44(float a, float b, float c, float d, float e, float f, float g, float h,
 		float i, float j, float k, float l, float m, float n, float o, float p) {
 		x[0][0] = a;
 		x[0][1] = b;
@@ -32,14 +35,14 @@ public:
 	float* operator [] (uint8_t i) { return x[i]; }
 
 	// Multiply the current matrix with another matrix (rhs)
-	Matrix operator * (const Matrix& v) const {
-		Matrix tmp;
+	Matrix44 operator * (const Matrix44& v) const {
+		Matrix44 tmp;
 		multiply(*this, v, tmp);
 
 		return tmp;
 	}
 
-	Matrix& operator *= (const Matrix& v) {
+	Matrix44 & operator *= (const Matrix44& v) {
 		multiply(*this, v, *this);
 		return *this;
 	}
@@ -54,22 +57,22 @@ public:
 	// matrix multiplicatin is not necessarily that common, this is probably not super
 	// useful nor really necessary (but nice to have -- and it gives you an example of how
 	// it can be done, as this how you will this operation implemented in most libraries).
-	static void multiply(const Matrix& a, const Matrix& b, Matrix& c) {
-#if 0
+	static void multiply(const Matrix44 &a, const Matrix44& b, Matrix44 &c) {
+	#if 0
 		for (uint8_t i = 0; i < 4; ++i) {
 			for (uint8_t j = 0; j < 4; ++j) {
 				c[i][j] = a[i][0] * b[0][j] + a[i][1] * b[1][j] +
 					a[i][2] * b[2][j] + a[i][3] * b[3][j];
 			}
 		}
-#else
+	#else
 		// A restric qualified pointer (or reference) is basically a promise
 		// to the compiler that for the scope of the pointer, the target of the
 		// pointer will only be accessed through that pointer (and pointers
 		// copied from it.
-		const float* __restrict ap = &a.x[0][0];
-		const float* __restrict bp = &b.x[0][0];
-		float* __restrict cp = &c.x[0][0];
+		const float * __restrict ap = &a.x[0][0];
+		const float * __restrict bp = &b.x[0][0];
+		float * __restrict cp = &c.x[0][0];
 
 		float a0, a1, a2, a3;
 
@@ -112,13 +115,13 @@ public:
 		cp[13] = a0 * bp[1] + a1 * bp[5] + a2 * bp[9] + a3 * bp[13];
 		cp[14] = a0 * bp[2] + a1 * bp[6] + a2 * bp[10] + a3 * bp[14];
 		cp[15] = a0 * bp[3] + a1 * bp[7] + a2 * bp[11] + a3 * bp[15];
-#endif
+	#endif
 	}
 
 	// return a transposed copy of the current matrix as a new matrix
-	inline Matrix transposed() const {
-#if 0
-		Matrix t;
+	Matrix44 transposed() const {
+	#if 0
+		Matrix44 t;
 		for (uint8_t i = 0; i < 4; ++i) {
 			for (uint8_t j = 0; j < 4; ++j) {
 				t[i][j] = x[j][i];
@@ -126,8 +129,8 @@ public:
 		}
 
 		return t;
-#else
-		return Matrix(x[0][0],
+	#else
+		return Matrix44(x[0][0],
 			x[1][0],
 			x[2][0],
 			x[3][0],
@@ -143,12 +146,12 @@ public:
 			x[1][3],
 			x[2][3],
 			x[3][3]);
-#endif
+	#endif
 	}
 
 	// transpose itself
-	inline Matrix& transpose() {
-		Matrix tmp(x[0][0],
+	Matrix44& transpose() {
+		Matrix44 tmp(x[0][0],
 			x[1][0],
 			x[2][0],
 			x[3][0],
@@ -180,21 +183,21 @@ public:
 	//
 	// The coordinate w is more often than not equals to 1, but it can be different than
 	// 1 especially when the matrix is projective matrix (perspective projection matrix).
-	inline void apply(const Vector4& src, Vector4& dst) const {
+	void apply(const Vector4 &src, Vector4 &dst) const {
 		dst.x = src[0] * x[0][0] + src[1] * x[1][0] + src[2] * x[2][0] + src[3] * x[3][0];
 		dst.y = src[0] * x[0][1] + src[1] * x[1][1] + src[2] * x[2][1] + src[3] * x[3][1];
 		dst.z = src[0] * x[0][2] + src[1] * x[1][2] + src[2] * x[2][2] + src[3] * x[3][2];
 		dst.w = src[0] * x[0][3] + src[1] * x[1][3] + src[2] * x[2][3] + src[3] * x[3][3];
 	}
 
-	inline void apply(const Vector3& src, Vector4& dst) const {
+	void apply(const Vector3 &src, Vector4 &dst) const {
 		dst.x = src[0] * x[0][0] + src[1] * x[1][0] + src[2] * x[2][0] + x[3][0];
 		dst.y = src[0] * x[0][1] + src[1] * x[1][1] + src[2] * x[2][1] + x[3][1];
 		dst.z = src[0] * x[0][2] + src[1] * x[1][2] + src[2] * x[2][2] + x[3][2];
 		dst.w = src[0] * x[0][3] + src[1] * x[1][3] + src[2] * x[2][3] + x[3][3];
 	}
 
-	inline void apply(const Vector3& src, Vector3& dst) const {
+	void apply(const Vector3 &src, Vector3 &dst) const {
 		dst.x = src[0] * x[0][0] + src[1] * x[1][0] + src[2] * x[2][0] + x[3][0];
 		dst.y = src[0] * x[0][1] + src[1] * x[1][1] + src[2] * x[2][1] + x[3][1];
 		dst.z = src[0] * x[0][2] + src[1] * x[1][2] + src[2] * x[2][2] + x[3][2];
@@ -204,12 +207,12 @@ public:
 		dst.z /= w;
 	}
 
-	inline Vector3 apply(const Vector3& src) const {
+	Vector3 apply(const Vector3 & src) const {
 		Vector3 dst;
 		apply(src, dst);
 		return dst;
 	}
-	inline Vector4 apply(const Vector4& src) const {
+	Vector4 apply(const Vector4 & src) const {
 		Vector4 dst;
 		apply(src, dst);
 		return dst;
@@ -219,19 +222,19 @@ public:
 	// with the previous method (to compute a point-matrix multiplication). We don't use
 	// the coefficients in the matrix that account for translation (x[3][0], x[3][1], x[3][2])
 	// and we don't compute w.
-	inline void applyDir(const Vector3& src, Vector3& dst) const {
+	void applyDir(const Vector3 &src, Vector3 &dst) const {
 		dst.x = src[0] * x[0][0] + src[1] * x[1][0] + src[2] * x[2][0];
 		dst.y = src[0] * x[0][1] + src[1] * x[1][1] + src[2] * x[2][1];
 		dst.z = src[0] * x[0][2] + src[1] * x[1][2] + src[2] * x[2][2];
 	}
 
-	inline Vector3 applyDir(const Vector3& src) const {
+	Vector3 applyDir(const Vector3 & src) const {
 		Vector3 dst;
 		applyDir(src, dst);
 		return dst;
 	}
 
-	inline void applyDir(const Vector3& src, Vector4& dst) const {
+	void applyDir(const Vector3 &src, Vector4 &dst) const {
 		dst.x = src[0] * x[0][0] + src[1] * x[1][0] + src[2] * x[2][0];
 		dst.y = src[0] * x[0][1] + src[1] * x[1][1] + src[2] * x[2][1];
 		dst.z = src[0] * x[0][2] + src[1] * x[1][2] + src[2] * x[2][2];
@@ -245,10 +248,10 @@ public:
 	// which is why we've added this code. For now, you can just use it and rely on it
 	// for doing what it's supposed to do. If you want to learn how this works though, check the lesson
 	// on called Matrix Inverse in the "Mathematics and Physics of Computer Graphics" section.
-	Matrix inverse() {
+	Matrix44 inverse() {
 		int i, j, k;
-		Matrix s;
-		Matrix t(*this);
+		Matrix44 s;
+		Matrix44 t(*this);
 
 		// Forward elimination
 		for (i = 0; i < 3; i++) {
@@ -273,7 +276,7 @@ public:
 
 			if (pivotsize == 0) {
 				// Cannot invert singular matrix
-				return Matrix();
+				return Matrix44();
 			}
 
 			if (pivot != i) {
@@ -306,7 +309,7 @@ public:
 
 			if ((f = t[i][i]) == 0) {
 				// Cannot invert singular matrix
-				return Matrix();
+				return Matrix44();
 			}
 
 			for (j = 0; j < 4; j++) {
@@ -328,12 +331,12 @@ public:
 	}
 
 	// set current matrix to its inverse
-	const Matrix& invert() {
+	const Matrix44& invert() {
 		*this = inverse();
 		return *this;
 	}
 
-	inline Matrix& setIdentity() {
+	Matrix44& setIdentity() {
 		x[0][0] = x[1][1] = x[2][2] = x[3][3] = 1.0f;
 		x[0][1] = x[0][2] = x[0][3] = 0.0f;
 		x[1][0] = x[1][2] = x[1][3] = 0.0f;
@@ -342,7 +345,7 @@ public:
 		return *this;
 	}
 
-	inline Matrix& setZero() {
+	Matrix44& setZero() {
 		x[0][0] = x[0][1] = x[0][2] = x[0][3] = 0.0f;
 		x[1][0] = x[1][1] = x[1][2] = x[1][3] = 0.0f;
 		x[2][0] = x[2][1] = x[2][2] = x[2][3] = 0.0f;
@@ -350,20 +353,20 @@ public:
 		return *this;
 	}
 
-	inline Matrix& translate(float x, float y, float z) {
-		Matrix m;
+	Matrix44& translate(float x, float y, float z) {
+		Matrix44 m;
 		m[3][0] = x; m[3][1] = y; m[3][2] = z;
 		return *this *= m;
 	}
 
-	inline Matrix& scale(float x, float y, float z) {
-		Matrix m;
+	Matrix44& scale(float x, float y, float z) {
+		Matrix44 m;
 		m[0][0] = x; m[1][1] = y; m[2][2] = z;
 		return *this *= m;
 	}
 
 	// theta in degrees
-	Matrix& rotate(float x, float y, float z, float theta) {
+	Matrix44& rotate(float x, float y, float z, float theta) {
 		float qsin = sin(theta * Math::DEGREE_TO_RADIUS * 0.5f);
 		float qcos = cos(theta * Math::DEGREE_TO_RADIUS * 0.5f);
 		Vector3 vec(x, y, z);
@@ -372,7 +375,7 @@ public:
 		y = vec.y * qsin;
 		z = vec.z * qsin;
 		float w = qcos;
-		Matrix m;
+		Matrix44 m;
 		m[0][0] = 1 - 2 * y * y - 2 * z * z;
 		m[1][0] = 2 * x * y - 2 * w * z;
 		m[2][0] = 2 * x * z + 2 * w * y;
@@ -388,7 +391,7 @@ public:
 		return *this *= m;
 	}
 
-	inline Matrix& setPerspective(float fov, float aspect, float zNear, float zFar) {
+	Matrix44& setPerspective(float fov, float aspect, float zNear, float zFar) {
 		float fax = 1.0f / tan(Math::DEGREE_TO_RADIUS * fov * 0.5f);
 		setZero();
 		x[0][0] = fax / aspect;
@@ -399,7 +402,7 @@ public:
 		return *this;
 	}
 
-	Matrix& setLookAt(Vector3 eye, Vector3 at, Vector3 up = Vector3(0, 1, 0)) {
+	Matrix44& setLookAt(Vector3 eye, Vector3 at, Vector3 up = Vector3(0, 1, 0)) {
 		Vector3 xaxis, yaxis, zaxis;
 
 		zaxis = at - eye;
@@ -428,7 +431,7 @@ public:
 		return *this;
 	}
 
-	friend std::ostream& operator << (std::ostream& s, const Matrix& m) {
+	friend std::ostream& operator << (std::ostream &s, const Matrix44 &m) {
 		std::ios_base::fmtflags oldFlags = s.flags();
 		int width = 12; // total with of the displayed number
 		s.precision(5); // control the number of displayed decimals
@@ -458,3 +461,5 @@ public:
 		return s;
 	}
 };
+
+#endif
