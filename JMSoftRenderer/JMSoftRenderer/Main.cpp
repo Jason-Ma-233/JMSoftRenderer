@@ -13,11 +13,13 @@ int	main(void) {
 
 	float aspect = colorBuffer.aspect();
 	Scene scene;
+	scene.addTriangle(1.0f);
 
 	while (window.is_run())
 	{
 		scene.clear();
-		scene.addTriangle(1.0f);
+
+
 
 		window.update();
 	}
