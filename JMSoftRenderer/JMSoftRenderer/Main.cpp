@@ -1,14 +1,12 @@
 #include "Window.h"
-#include "Define.h"
-#include "Matrix.h"
-#include "FrameBuffer.h"
-#include "Scene.h"
+#include "Pipeline.h"
 
 using namespace std;
 
 int	main(void) {
 
 	IntBuffer colorBuffer(1280, 720);
+	//Pipeline pipeline(colorBuffer);
 	Window window(colorBuffer.get_width(), colorBuffer.get_height(), _T("[ JM Soft Renderer ] "));
 
 	float aspect = colorBuffer.aspect();
@@ -19,7 +17,7 @@ int	main(void) {
 	{
 		scene.clear();
 
-
+		//pipeline.render(scene);
 
 		window.update();
 	}

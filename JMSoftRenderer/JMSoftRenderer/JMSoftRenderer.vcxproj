@@ -153,6 +153,7 @@
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="Main.cpp">
       <OpenMPSupport Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</OpenMPSupport>
     </ClCompile>
