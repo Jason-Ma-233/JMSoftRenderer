@@ -9,10 +9,11 @@ class FrameBuffer {
 protected:
 	size_t width, height;
 	size_t size;
+	float aspect;
 	T* buffer;
 
 public:
-	FrameBuffer(size_t width, size_t height) : width(width), height(height), size(width* height) {
+	FrameBuffer(size_t width, size_t height) : width(width), height(height), size(width* height), aspect((float)width / height) {
 		buffer = new T[size];
 	}
 	~FrameBuffer() {
@@ -22,7 +23,7 @@ public:
 	inline size_t get_width() const { return width; }
 	inline size_t get_height() const { return height; }
 	inline size_t get_size() const { return size; }
-	inline float aspect() const { return (float)get_width() / get_height(); }
+	inline float get_aspect() const { return aspect; }
 
 	inline void set(size_t x, size_t y, const T& data) { assert(y * width + x < size); buffer[y * width + x] = data; }
 	inline void set(size_t index, const T& data) { assert(index < size); buffer[index] = data; }

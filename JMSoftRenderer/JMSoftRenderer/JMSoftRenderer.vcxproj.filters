@@ -51,6 +51,9 @@
     <ClInclude Include="Primitives.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="OBJ_Loader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">

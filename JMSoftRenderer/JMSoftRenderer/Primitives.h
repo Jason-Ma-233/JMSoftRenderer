@@ -13,12 +13,6 @@ struct Vertex {
 	Vector3 normal;
 };
 
-// 三角图元
-struct Primitive {
-	size_t vertexIndex[3];
-	Vector3 extraNormal = Vector3::Zero();
-};
-
 // 着色函数
 typedef function<
 	bool(RGBColor& out, const Vector3& pos, const RGBColor& color, const Vector3& normal,
@@ -28,7 +22,7 @@ typedef function<
 // 三角Mesh
 struct Mesh {
 	vector<Vertex> vertices;
-	vector<Primitive> primitives;
+	vector<unsigned int> indices;
 	shared_ptr<IntBuffer> texture;
 	ShadeFunc shadeFunc;
 };
@@ -39,7 +33,7 @@ struct TVertex {
 	RGBColor color;
 	TexCoord texCoord;
 	Vector3 normal;
-	float rhw;
+	float rhw;// view 1/Z
 
 	TVertex() {}
 	TVertex(const Vertex& vertex) : color(vertex.color), texCoord(vertex.texCoord) {}

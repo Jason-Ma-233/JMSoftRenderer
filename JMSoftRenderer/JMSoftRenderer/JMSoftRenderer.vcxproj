@@ -145,6 +145,7 @@
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="Matrix.h" />
+    <ClInclude Include="OBJ_Loader.h" />
     <ClInclude Include="Pipeline.h" />
     <ClInclude Include="Primitives.h" />
     <ClInclude Include="Scene.h" />

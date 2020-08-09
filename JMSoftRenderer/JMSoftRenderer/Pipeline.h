@@ -8,7 +8,7 @@
 #include <omp.h>
 
 class Pipeline {
-//public:
+	//public:
 
 private:
 	////          缓冲区Buffer          ////
@@ -19,11 +19,11 @@ private:
 	const int screenHeight;
 
 	////          当前渲染设置          ////
-	RGBColor clearColor;        // 清除颜色
+
 
 	////       当前渲染的状态变量       ////
 	shared_ptr<IntBuffer> currentTexture;   // 当前Mesh使用的纹理
-	//ShadeFunc currentShadeFunc;             // 当前Mesh使用的着色函数
+	ShadeFunc currentShadeFunc;             // 当前Mesh使用的着色函数
 
 	// 画像素点(会检查越界)
 	void drawPixel(int x, int y, const RGBColor& color);
@@ -44,9 +44,14 @@ public:
 	Pipeline(IntBuffer& renderBuffer);
 	~Pipeline();
 
-	// 设置清除颜色
-	void setClearColor(RGBColor clearColor) { this->clearColor = clearColor; }
+	void clearBuffers(RGBColor clearColor) {
+		this->renderBuffer.fill(clearColor.toRGBInt());
+		this->ZBuffer.fill(0.0f);
+	}
 
-	// 渲染一帧
 	void render(const Scene& scene);
+
+	void renderTriangle(const Vertex* v[3], Matrix& transform);
+
+	void renderMeshes(const Scene& scene);
 };

@@ -41,38 +41,25 @@ void Pipeline::rasterizeScanline(Scanline& scanline) {
 	float* zbPtr = ZBuffer(0, scanline.y);
 	int x0 = MAX(scanline.x0, 0), x1 = MIN(scanline.x1, screenWidth - 1);
 	TVertex vi = scanline.v0, v;
-	RGBColor c;
-	int rs = currentTexture ? renderState : renderState & (~TEXTURE);
-	rs = currentShadeFunc ? rs : rs & (~SHADING);
 	float invW = 1.f / screenWidth, invH = 1.f / screenHeight;
-	Vector3 pos;
-	omp_set_lock(locks + scanline.y);
+	RGBColor c(0.5f, 0.5f, 0.5f);
+
+	//omp_set_lock(locks + scanline.y);
 	for (int x = x0; x <= x1; x++) {
 		float rhw = vi.rhw;
-		if (rhw >= zbPtr[x]) {  // 使用Z-buffer判断深度是否满足
-			v = vi * (1.0f / rhw);
-			if (rs & SHADING) {
-				pos = vi.point, pos.x *= invW, pos.y *= invH;
-				if (currentShadeFunc(c, pos, v.color, v.normal.NormalizedVector(), currentTexture, v.texCoord)) {
-					fbPtr[x] = c.toRGBInt();
-					zbPtr[x] = rhw;
-				}
-			}
-			else {
-				if (rs & TEXTURE) {
-					c.setRGBInt(currentTexture->get(v.texCoord));
-					if (rs & COLOR) c *= v.color;
-				}
-				else if (rs & COLOR) {
-					c = v.color;
-				}
-				fbPtr[x] = c.toRGBInt();
-				zbPtr[x] = rhw;
-			}
+		if (rhw >= zbPtr[x]) {  // 比较1/z
+			v = vi * (1.0f / rhw);// 线性插值后恢复
+			v.normal.normalize();
+			v.normal = v.normal * 0.5f + 0.5f;
+			c.r = v.normal.x;
+			c.g = v.normal.y;
+			c.b = v.normal.z;
+			fbPtr[x] = c.toRGBInt();
+			zbPtr[x] = rhw;
 		}
-		vi += scanline.step;
+		vi += scanline.step;// 插值结果分布到每像素
 	}
-	omp_unset_lock(locks + scanline.y);
+	//omp_unset_lock(locks + scanline.y);
 }
 
 void Pipeline::rasterizeTriangle(const SplitedTriangle& st) {
@@ -166,32 +153,54 @@ void Pipeline::triangleSpilt(SplitedTriangle& st, const TVertex* v0, const TVert
 }
 
 
-void Pipeline::render(const Scene& scene) {
-	renderBuffer.fill(clearColor.toRGBInt());
-	ZBuffer.fill(0.0f);
+void Pipeline::renderTriangle(const Vertex* v[3], Matrix& transform) {
+	Vector4 clipPos[3];
+	Vector3 screenPos[3];
+	for (size_t i = 0; i < 3; i++) {
+		transform.apply(v[i]->point, clipPos[i]);
+	}
+	for (size_t i = 0; i < 3; i++)
+		transformHomogenize(clipPos[i], screenPos[i]);
 
-	Matrix VPMatrix = scene.view * scene.projection;
+	int cvv[3] = { checkCVV(clipPos[0]), checkCVV(clipPos[1]), checkCVV(clipPos[2]) };
+	//if (cvv[0] && cvv[1] && cvv[2]) return;
+	if (cvv[0] || cvv[1] || cvv[2]) return;
 
+	if (cross(screenPos[1] - screenPos[0], screenPos[2] - screenPos[1]).z <= 0)
+		return;
 
-	Vector4 c0, c1, c2;
-	Vector3 p0, p1, p2;
-	VPMatrix.apply(scene.triangle.vertex[0], c0);
-	VPMatrix.apply(scene.triangle.vertex[1], c1);
-	VPMatrix.apply(scene.triangle.vertex[2], c2);
-
-	transformHomogenize(c0, p0);
-	transformHomogenize(c1, p1);
-	transformHomogenize(c2, p2);
-
-	TVertex v0, v1, v2;
+	TVertex tv[3];
 	SplitedTriangle st;
-	v0.point = p0;
-	v1.point = p1;
-	v2.point = p2;
+	for (size_t i = 0; i < 3; i++) {
+		tv[i] = TVertex(
+			screenPos[i],
+			RGBColor(v[i]->texCoord.x, v[i]->texCoord.y, 1),
+			TexCoord(v[i]->texCoord.x, v[i]->texCoord.y),
+			v[i]->normal,
+			1);
+		tv[i].init_rhw(clipPos[i].w);
+	}
+	triangleSpilt(st, &tv[0], &tv[1], &tv[2]);
+	rasterizeTriangle(st);
+}
 
-	v0.init_rhw(c0.w);
-	v1.init_rhw(c1.w);
-	v2.init_rhw(c2.w);
+void Pipeline::renderMeshes(const Scene& scene)
+{
+	Matrix VPMatrix = scene.view * scene.projection;
+	for (auto& mesh : scene.meshes)
+	{
+		currentShadeFunc = mesh.shadeFunc;
+		currentTexture = mesh.texture;
 
-
+#pragma omp parallel for schedule(dynamic)
+		for (int i = 0; i < mesh.indices.size(); i += 3)
+		{
+			const Vertex* v[3] = {
+				&mesh.vertices[mesh.indices[i]],
+				&mesh.vertices[mesh.indices[i + 1]],
+				&mesh.vertices[mesh.indices[i + 2]]
+			};
+			renderTriangle(v, VPMatrix);
+		}
+	}
 }
