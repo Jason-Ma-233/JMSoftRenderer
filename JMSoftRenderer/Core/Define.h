@@ -1,5 +1,11 @@
 #pragma once
 
+// 位置放的不对导致编译错误
+//#define UBPA_USE_SIMD
+//#include <UGM/UGM.h>
+//using namespace Ubpa;
+
+
 #include <string>
 #include <vector>
 #include <functional>
@@ -14,6 +20,8 @@
 #endif
 
 #include <cassert>
+
+
 
 #include "Math.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Matrix.h"
+#include "../Core/Matrix.h"
 #include "FrameBuffer.h"
 #include "Primitives.h"
 #include "Scene.h"

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Vector.h"
-#include "Color.h"
+#include "../Core/Vector.h"
+#include "../Core/Color.h"
 #include "FrameBuffer.h"
 
 typedef Vector2 TexCoord;

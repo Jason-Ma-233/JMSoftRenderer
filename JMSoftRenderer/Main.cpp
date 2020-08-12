@@ -1,11 +1,8 @@
-#include "Window.h"
-#include "Pipeline.h"
-#include "OBJ_Loader.h"
-
+#include "header/Window.h"
+#include "header/Pipeline.h"
+#include "header/OBJ_Loader.h"
 
 using namespace std;
-
-
 
 void addMesh(Scene& scene, vector<objl::Mesh> objMeshes) {
 	for (auto& objMesh : objMeshes)
@@ -36,7 +33,7 @@ int	main(void) {
 
 	// Load .obj File
 	objl::Loader loader;
-	const char* obj_path = "D:\\Code\\Git\\JMSoftRenderer\\JMSoftRenderer\\models\\spot\\_spot_triangulated_good.obj";
+	const char* obj_path = "D:\\Code\\CPP\\JMSoftRenderer\\models\\spot\\_spot_triangulated_good.obj";
 	bool loadout = loader.LoadFile(obj_path);
 
 	Scene scene;

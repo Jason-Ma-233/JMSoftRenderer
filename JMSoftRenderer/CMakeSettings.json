@@ -1,0 +1,47 @@
+﻿{
+  "configurations": [
+    {
+      "name": "x64-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "variables": [
+        {
+          "name": "UTemplate_DIR",
+          "value": "C:/Program Files (x86)/Ubpa/UTemplate_0_4_7/cmake",
+          "type": "PATH"
+        },
+        {
+          "name": "UCMake_DIR",
+          "value": "C:/Program Files (x86)/Ubpa/UCMake_0_6_1/cmake",
+          "type": "PATH"
+        },
+        {
+          "name": "UGM_DIR",
+          "value": "C:/Program Files (x86)/Ubpa/UGM_0_6_8/cmake",
+          "type": "PATH"
+        },
+        {
+          "name": "Ubpa_BuildTest_UTemplate",
+          "value": "true",
+          "type": "BOOL"
+        },
+        {
+          "name": "UBPA_USE_SIMD",
+          "value": "true",
+          "type": "BOOL"
+        },
+        {
+          "name": "Ubpa_BuildTest_UCMake",
+          "value": "true",
+          "type": "BOOL"
+        }
+      ]
+    }
+  ]
+}
