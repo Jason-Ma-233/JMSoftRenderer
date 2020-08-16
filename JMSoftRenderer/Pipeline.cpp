@@ -2,14 +2,6 @@
 #include <algorithm>
 
 
-Pipeline::Pipeline(IntBuffer& renderBuffer) : renderBuffer(renderBuffer),
-screenWidth((int)renderBuffer.get_width()), screenHeight((int)renderBuffer.get_height()),
-ZBuffer(renderBuffer.get_width(), renderBuffer.get_height()) {
-}
-
-Pipeline::~Pipeline() {
-}
-
 int Pipeline::checkCVV(const Vector4& v) {
 	float w = v.w;
 	int check = 0;
@@ -22,44 +14,76 @@ int Pipeline::checkCVV(const Vector4& v) {
 	return check;
 }
 
-void Pipeline::transformHomogenize(const Vector4& src, Vector3& dst) {
+inline void Pipeline::transformHomogenize(const Vector4& src, Vector3& dst) {
 	dst = (Vector3)src;
-	dst.x = (dst.x + 1.0f) * screenWidth * 0.5f;
-	dst.y = (1.0f - dst.y) * screenHeight * 0.5f;
+	dst.x = (dst.x + 1.0f) * targetWidth * 0.5f;
+	dst.y = (1.0f - dst.y) * targetHeight * 0.5f;
 }
 
 inline void Pipeline::drawPixel(int x, int y, const RGBColor& color) {
-	//assert(x >= 0 && x < screenWidth&& y >= 0 && y < screenHeight);
-	if (x >= 0 && x < screenWidth && y >= 0 && y < screenHeight)
+	//assert(x >= 0 && x < targetWidth&& y >= 0 && y < targetHeight);
+	if (x >= 0 && x < targetWidth && y >= 0 && y < targetHeight)
 		renderBuffer.set(x, y, color.toRGBInt());
 	else
 		printf("drawPixel() Out of bound!");
 }
 
 void Pipeline::rasterizeScanline(Scanline& scanline) {
+	if (scanline.y < 0 || scanline.y >= targetHeight) return;
 	int* fbPtr = renderBuffer(0, scanline.y);
 	float* zbPtr = ZBuffer(0, scanline.y);
-	int x0 = MAX(scanline.x0, 0), x1 = MIN(scanline.x1, screenWidth - 1);
+	int x0 = MAX(scanline.x0, 0), x1 = MIN(scanline.x1, targetWidth - 1);
 	TVertex vi = scanline.v0, v;
-	float invW = 1.f / screenWidth, invH = 1.f / screenHeight;
+	float invW = 1.f / targetWidth, invH = 1.f / targetHeight;
 	RGBColor c(0.5f, 0.5f, 0.5f);
 
 	//omp_set_lock(locks + scanline.y);
 	for (int x = x0; x <= x1; x++) {
-		float rhw = vi.rhw;
-		if (rhw >= zbPtr[x]) {  // 比较1/z
+		// 透视投影比较rhw，正交则直接比较像素深度
+		float rhw = projectionMethod == ProjectionMethod::Perspective ? vi.rhw : 1.0f / vi.point.z;
+		if (rhw >= zbPtr[x]) {  // 比较深度
 			v = vi * (1.0f / rhw);// 线性插值后恢复
+			// shading
+
+			// normal
 			v.normal.normalize();
 			v.normal = v.normal * 0.5f + 0.5f;
 			c.r = v.normal.x;
 			c.g = v.normal.y;
 			c.b = v.normal.z;
+
+			/*
+			// depth
+			float z = projectionMethod == ProjectionMethod::Perspective ? rhw : vi.point.z;
+			c.r = z;
+			c.g = z;
+			c.b = z;
+			*/
+
 			fbPtr[x] = c.toRGBInt();
 			zbPtr[x] = rhw;
 		}
 		vi += scanline.step;// 插值结果分布到每像素
 	}
 	//omp_unset_lock(locks + scanline.y);
+}
+
+void Pipeline::rasterizeShadowMap(Scanline& scanline)
+{
+	if (scanline.y < 0 || scanline.y >= targetHeight) return;
+	int* fbPtr = renderBuffer(0, scanline.y);
+	float* zbPtr = shadowBuffer(0, scanline.y);
+	int x0 = MAX(scanline.x0, 0), x1 = MIN(scanline.x1, targetWidth - 1);
+	TVertex vi = scanline.v0;
+
+	for (int x = x0; x <= x1; x++) {
+		float z = 1.0f / vi.point.z;
+		if (z >= zbPtr[x]) {
+			fbPtr[x] = RGBColor(z * 0.01f, z * 0.01f, z*0.01f).toRGBInt();
+			zbPtr[x] = z;
+		}
+		vi += scanline.step;// 插值结果分布到每像素
+	}
 }
 
 void Pipeline::rasterizeTriangle(const SplitedTriangle& st) {
@@ -78,7 +102,7 @@ void Pipeline::rasterizeTriangle(const SplitedTriangle& st) {
 			scanline.y = y;
 			scanline.v0 = left;
 			scanline.step = (right - left) * (1.0f / (right.point.x - left.point.x));
-			rasterizeScanline(scanline);
+			(this->*currentRasterizeScanlineFunc)(scanline);
 		}
 	}
 	if (st.type & SplitedTriangle::FLAT_BOTTOM) {
@@ -96,7 +120,7 @@ void Pipeline::rasterizeTriangle(const SplitedTriangle& st) {
 			scanline.y = y;
 			scanline.v0 = left;
 			scanline.step = (right - left) * (1.0f / (right.point.x - left.point.x));
-			rasterizeScanline(scanline);
+			(this->*currentRasterizeScanlineFunc)(scanline);
 		}
 	}
 }
@@ -153,19 +177,19 @@ void Pipeline::triangleSpilt(SplitedTriangle& st, const TVertex* v0, const TVert
 }
 
 
-void Pipeline::renderTriangle(const Vertex* v[3], Matrix& transform) {
+void Pipeline::renderTriangle(const Vertex* v[3]) {
 	Vector4 clipPos[3];
 	Vector3 screenPos[3];
 	for (size_t i = 0; i < 3; i++) {
-		transform.apply(v[i]->point, clipPos[i]);
+		_matrix_MVP.apply(v[i]->point, clipPos[i]);
 	}
 	for (size_t i = 0; i < 3; i++)
 		transformHomogenize(clipPos[i], screenPos[i]);
 
+	// 简单cvv裁剪，三角形全在屏幕外则不渲染
 	int cvv[3] = { checkCVV(clipPos[0]), checkCVV(clipPos[1]), checkCVV(clipPos[2]) };
-	//if (cvv[0] && cvv[1] && cvv[2]) return;
-	if (cvv[0] || cvv[1] || cvv[2]) return;
-
+	if (cvv[0] && cvv[1] && cvv[2]) return;
+	// 背面裁剪
 	if (cross(screenPos[1] - screenPos[0], screenPos[2] - screenPos[1]).z <= 0)
 		return;
 
@@ -174,9 +198,10 @@ void Pipeline::renderTriangle(const Vertex* v[3], Matrix& transform) {
 	for (size_t i = 0; i < 3; i++) {
 		tv[i] = TVertex(
 			screenPos[i],
+			_matrix_M.apply(v[i]->point),
 			RGBColor(v[i]->texCoord.x, v[i]->texCoord.y, 1),
 			TexCoord(v[i]->texCoord.x, v[i]->texCoord.y),
-			v[i]->normal,
+			_matrix_M.apply(v[i]->normal),
 			1);
 		tv[i].init_rhw(clipPos[i].w);
 	}
@@ -186,7 +211,15 @@ void Pipeline::renderTriangle(const Vertex* v[3], Matrix& transform) {
 
 void Pipeline::renderMeshes(const Scene& scene)
 {
-	Matrix VPMatrix = scene.view * scene.projection;
+	currentRasterizeScanlineFunc = &Pipeline::rasterizeScanline;
+	targetWidth = (int)renderBuffer.get_width();
+	targetHeight = (int)renderBuffer.get_height();
+	_matrix_M = scene.model;
+	_matrix_V = scene.view;
+	_matrix_P = scene.projection;
+	_matrix_VP = scene.view * scene.projection;
+	_matrix_MVP = scene.model * _matrix_VP;
+
 	for (auto& mesh : scene.meshes)
 	{
 		currentShadeFunc = mesh.shadeFunc;
@@ -200,7 +233,36 @@ void Pipeline::renderMeshes(const Scene& scene)
 				&mesh.vertices[mesh.indices[i + 1]],
 				&mesh.vertices[mesh.indices[i + 2]]
 			};
-			renderTriangle(v, VPMatrix);
+			renderTriangle(v);
+		}
+	}
+}
+
+void Pipeline::renderShadowMap(const Scene& scene)
+{
+	currentRasterizeScanlineFunc = &Pipeline::rasterizeShadowMap;
+	targetWidth = (int)shadowBuffer.get_width();
+	targetHeight = (int)shadowBuffer.get_height();
+	_matrix_M = scene.model;
+	_matrix_V = scene.view_light;
+	_matrix_P = scene.projection_light;
+	_matrix_VP = scene.view_light * scene.projection_light;
+	_matrix_MVP = scene.model * _matrix_VP;
+
+	for (auto& mesh : scene.meshes)
+	{
+		currentShadeFunc = mesh.shadeFunc;
+		currentTexture = mesh.texture;
+
+#pragma omp parallel for schedule(dynamic)
+		for (int i = 0; i < mesh.indices.size(); i += 3)
+		{
+			const Vertex* v[3] = {
+				&mesh.vertices[mesh.indices[i]],
+				&mesh.vertices[mesh.indices[i + 1]],
+				&mesh.vertices[mesh.indices[i + 2]]
+			};
+			renderTriangle(v);
 		}
 	}
 }

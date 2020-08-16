@@ -30,6 +30,7 @@ struct Mesh {
 // 带透视矫正的插值顶点
 struct TVertex {
 	Vector3 point;
+	Vector3 worldPos;
 	RGBColor color;
 	TexCoord texCoord;
 	Vector3 normal;
@@ -37,8 +38,8 @@ struct TVertex {
 
 	TVertex() {}
 	TVertex(const Vertex& vertex) : color(vertex.color), texCoord(vertex.texCoord) {}
-	TVertex(const Vector3& point, const RGBColor& color, TexCoord texCoord, const Vector3& normal, float rhw) :
-		point(point), color(color), normal(normal), rhw(rhw), texCoord(texCoord) {}
+	TVertex(const Vector3& point, const Vector3& worldPos, const RGBColor& color, TexCoord texCoord, const Vector3& normal, float rhw) :
+		point(point), worldPos(worldPos), color(color), normal(normal), rhw(rhw), texCoord(texCoord) {}
 
 	void init_rhw(float w) {
 		rhw = 1.0f / w;
@@ -49,6 +50,7 @@ struct TVertex {
 	TVertex operator+ (const TVertex& vertex) const {
 		return TVertex{
 			point + vertex.point,
+			worldPos + vertex.worldPos,
 			color + vertex.color,
 			texCoord + vertex.texCoord,
 			normal + vertex.normal,
@@ -57,6 +59,7 @@ struct TVertex {
 	}
 	TVertex& operator+= (const TVertex& vertex) {
 		point += vertex.point;
+		worldPos += vertex.worldPos;
 		color += vertex.color;
 		texCoord += vertex.texCoord;
 		normal += vertex.normal;
@@ -66,6 +69,7 @@ struct TVertex {
 	TVertex operator- (const TVertex& vertex) const {
 		return TVertex{
 			point - vertex.point,
+			worldPos - vertex.worldPos,
 			color - vertex.color,
 			texCoord - vertex.texCoord,
 			normal - vertex.normal,
@@ -74,6 +78,7 @@ struct TVertex {
 	}
 	TVertex& operator-= (const TVertex& vertex) {
 		point -= vertex.point;
+		worldPos -= vertex.worldPos;
 		color -= vertex.color;
 		texCoord -= vertex.texCoord;
 		normal -= vertex.normal;
@@ -83,6 +88,7 @@ struct TVertex {
 	TVertex operator* (float k) const {
 		return TVertex{
 			point * k,
+			worldPos * k,
 			color * k,
 			texCoord * k,
 			normal * k,
@@ -91,6 +97,7 @@ struct TVertex {
 	}
 	TVertex& operator*= (float k) {
 		point *= k;
+		worldPos *= k;
 		color *= k;
 		texCoord *= k;
 		normal *= k;

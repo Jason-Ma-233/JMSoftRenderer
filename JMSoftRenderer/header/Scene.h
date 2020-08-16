@@ -12,8 +12,11 @@ class Scene {
 	friend class Pipeline;
 
 private:
-	Matrix view;
+	Matrix model;
+	Matrix view;// 目前能用但并不准确
 	Matrix projection;
+
+	Matrix view_light, projection_light;
 
 	vector<Mesh> meshes;
 
@@ -26,6 +29,14 @@ public:
 	void setViewMatrix(Matrix view) { this->view = view; }
 	void setProjectionMatrix(Matrix projection) { this->projection = projection; }
 	void setPerspective(float fov, float aspect, float zNear, float zFar) { projection.setPerspective(fov, aspect, zNear, zFar); }
+	void setOrthographic(float width, float height, float depth) { projection.scale(2.0f / width, 2.0f / height, 1.0f / depth); }
+	void setLight(Matrix view, float width, float height, float depth) {
+		this->view_light = view;
+		projection_light.scale(2.0f / width, 2.0f / height, 1.0f / depth);
+	}
+
+	void cameraTranslate(float y, float z) { this->view.translate(0, y, z); }
+	void modelRotate(float angle) { this->model.rotate(0, 1, 0, angle); }
 
 	void addMesh(Mesh mesh) {
 		meshes.push_back(mesh);
@@ -50,7 +61,10 @@ public:
 	};
 
 	void clear() {
+		model.setIdentity();
 		view.setIdentity();
 		projection.setIdentity();
+		view_light.setIdentity();
+		projection_light.setIdentity();
 	}
 };

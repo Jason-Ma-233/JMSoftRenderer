@@ -28,30 +28,50 @@ void addMesh(Scene& scene, vector<objl::Mesh> objMeshes) {
 int	main(void) {
 
 	IntBuffer colorBuffer(1280, 720);
-	Pipeline pipeline(colorBuffer);
+	Pipeline pipeline(colorBuffer, 512);
 	Window window(colorBuffer.get_width(), colorBuffer.get_height(), _T("JM Soft Renderer  "));
 
 	// Load .obj File
 	objl::Loader loader;
-	const char* obj_path = "D:\\Code\\CPP\\JMSoftRenderer\\models\\spot\\_spot_triangulated_good.obj";
-	bool loadout = loader.LoadFile(obj_path);
+	const char* obj_path = "../../../../models/spot/_spot_triangulated_good.obj";
+	if (!loader.LoadFile(obj_path)) {
+		cout << "File loading failed!" << endl;
+		return 1;
+	}
 
 	Scene scene;
-	//scene.addTriangle();
+	scene.setLight(
+		Matrix().rotate(0, 1, 0, 70.0f).rotate(1, 0, 0, -60.0f).translate(-0.2f, 0.3f, 3.5f),
+		4.0f, 4.0f, 100.0f
+	);
+
+	scene.setViewMatrix(Matrix().translate(0, 0, 2.5f));
+	scene.setPerspective(60.0f, colorBuffer.get_aspect(), 0.1f, 100.0f);
+	
+
 	addMesh(scene, loader.LoadedMeshes);
 
 
 	while (window.is_run())
 	{
 		pipeline.clearBuffers(Colors::Black);
-		scene.clear();
-		scene.setPerspective(60.0f, colorBuffer.get_aspect(), 0.1f, 1000.0f);
 
+		pipeline.renderShadowMap(scene);
 		pipeline.renderMeshes(scene);
-
 
 		memcpy(window(), colorBuffer(), colorBuffer.get_size() * sizeof(int));
 		window.update();
+
+		// input
+		if (window.is_key(VK_ESCAPE)) window.destory();
+		if (window.is_key('W')) scene.cameraTranslate(0.0f, -0.02f);
+		if (window.is_key('S')) scene.cameraTranslate(0.0f, 0.02f);
+		if (window.is_key('E')) scene.cameraTranslate(-0.02f, 0.0f);
+		if (window.is_key('Q')) scene.cameraTranslate(0.02f, 0.0f);
+
+		if (window.is_key('A')) scene.modelRotate(2.0f);
+		else if (window.is_key('D')) scene.modelRotate(-2.0f);
+		else scene.modelRotate(0.25f);
 	}
 
 
