@@ -2,31 +2,6 @@
 #include <algorithm>
 
 
-int Pipeline::checkCVV(const Vector4& v) {
-	float w = v.w;
-	int check = 0;
-	if (v.z < 0.f) check |= 1;
-	if (v.z > w)   check |= 2;
-	if (v.x < -w)  check |= 4;
-	if (v.x > w)   check |= 8;
-	if (v.y < -w)  check |= 16;
-	if (v.y > w)   check |= 32;
-	return check;
-}
-
-inline void Pipeline::transformHomogenize(const Vector4& src, Vector3& dst) {
-	dst = (Vector3)src;
-	dst.x = (dst.x + 1.0f) * targetWidth * 0.5f;
-	dst.y = (1.0f - dst.y) * targetHeight * 0.5f;
-}
-
-inline void Pipeline::drawPixel(int x, int y, const RGBColor& color) {
-	//assert(x >= 0 && x < targetWidth&& y >= 0 && y < targetHeight);
-	if (x >= 0 && x < targetWidth && y >= 0 && y < targetHeight)
-		renderBuffer.set(x, y, color.toRGBInt());
-	else
-		printf("drawPixel() Out of bound!");
-}
 
 void Pipeline::rasterizeScanline(Scanline& scanline) {
 	if (scanline.y < 0 || scanline.y >= targetHeight) return;
@@ -44,6 +19,11 @@ void Pipeline::rasterizeScanline(Scanline& scanline) {
 		if (rhw >= zbPtr[x]) {  // 比较深度
 			v = vi * (1.0f / rhw);// 线性插值后恢复
 			// shading
+
+			// samping shadow
+			auto clipPos_light = _matrix_light_VP.apply(v.worldPos);
+			Vector3 screenPos_light;
+			transformHomogenize(clipPos_light, screenPos_light, shadowBuffer.get_width(), shadowBuffer.get_height());
 
 			// normal
 			v.normal.normalize();
@@ -79,7 +59,7 @@ void Pipeline::rasterizeShadowMap(Scanline& scanline)
 	for (int x = x0; x <= x1; x++) {
 		float z = 1.0f / vi.point.z;
 		if (z >= zbPtr[x]) {
-			fbPtr[x] = RGBColor(z * 0.01f, z * 0.01f, z*0.01f).toRGBInt();
+			fbPtr[x] = RGBColor(z * 0.01f, z * 0.01f, z * 0.01f).toRGBInt();
 			zbPtr[x] = z;
 		}
 		vi += scanline.step;// 插值结果分布到每像素
@@ -184,7 +164,7 @@ void Pipeline::renderTriangle(const Vertex* v[3]) {
 		_matrix_MVP.apply(v[i]->point, clipPos[i]);
 	}
 	for (size_t i = 0; i < 3; i++)
-		transformHomogenize(clipPos[i], screenPos[i]);
+		transformHomogenize(clipPos[i], screenPos[i], targetWidth, targetHeight);
 
 	// 简单cvv裁剪，三角形全在屏幕外则不渲染
 	int cvv[3] = { checkCVV(clipPos[0]), checkCVV(clipPos[1]), checkCVV(clipPos[2]) };
@@ -219,6 +199,7 @@ void Pipeline::renderMeshes(const Scene& scene)
 	_matrix_P = scene.projection;
 	_matrix_VP = scene.view * scene.projection;
 	_matrix_MVP = scene.model * _matrix_VP;
+	_matrix_light_VP = scene.view_light * scene.projection_light;
 
 	for (auto& mesh : scene.meshes)
 	{
@@ -248,6 +229,7 @@ void Pipeline::renderShadowMap(const Scene& scene)
 	_matrix_P = scene.projection_light;
 	_matrix_VP = scene.view_light * scene.projection_light;
 	_matrix_MVP = scene.model * _matrix_VP;
+	_matrix_light_VP = _matrix_VP;
 
 	for (auto& mesh : scene.meshes)
 	{

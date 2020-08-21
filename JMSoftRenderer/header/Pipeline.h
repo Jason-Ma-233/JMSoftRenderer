@@ -36,8 +36,6 @@ private:
 	int targetHeight;
 
 
-	// 画像素点(会检查越界)
-	void drawPixel(int x, int y, const RGBColor& color);
 	// 光栅化扫描线
 	void rasterizeScanline(Scanline& scanline);
 	// 光栅化扫描线（shadowMap版本）
@@ -46,12 +44,38 @@ private:
 	void triangleSpilt(SplitedTriangle& st, const TVertex* v0, const TVertex* v1, const TVertex* v2);
 	// 根据y值将平底（顶）三角形转变为扫描线数据
 	void rasterizeTriangle(const SplitedTriangle& st);
-	// 判断点是否在CVV里面,返回标识位置的码,用于视锥裁剪
-	int checkCVV(const Vector4& v);
-	// 坐标归一化,并转换到屏幕空间
-	void transformHomogenize(const Vector4& src, Vector3& dst);
 	// 对一个三角形变换、裁剪、生成扫描线
 	void renderTriangle(const Vertex* v[3]);
+
+	// 画像素点(会检查越界)
+	inline void drawPixel(int x, int y, const RGBColor& color) {
+		if (x >= 0 && x < targetWidth && y >= 0 && y < targetHeight)
+			renderBuffer.set(x, y, color.toRGBInt());
+		else
+			printf("drawPixel() Out of bound!");
+	}
+
+	// 判断点是否在CVV里面,返回标识位置的码,用于视锥裁剪
+	inline int checkCVV(const Vector4& v) {
+		float w = v.w;
+		int check = 0;
+		if (v.z < 0.f) check |= 1;
+		if (v.z > w)   check |= 2;
+		if (v.x < -w)  check |= 4;
+		if (v.x > w)   check |= 8;
+		if (v.y < -w)  check |= 16;
+		if (v.y > w)   check |= 32;
+		return check;
+	}
+
+	// 坐标归一化,并转换到屏幕空间
+	inline void transformHomogenize(const Vector4& src, Vector3& dst, float width, float height) { transformHomogenize((Vector3)src, dst, width, height); }
+	inline void transformHomogenize(const Vector3& src, Vector3& dst, float width, float height) {
+		dst = Vector3(src);
+		dst.x = (dst.x + 1.0f) * width * 0.5f;
+		dst.y = (1.0f - dst.y) * height * 0.5f;
+	}
+
 
 
 public:
