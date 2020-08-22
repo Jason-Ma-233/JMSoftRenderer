@@ -53,6 +53,14 @@ public:
 	inline T get(const Vector2& pos) const {
 		return get(pos.x, pos.y);
 	}
+
+	// texture sampling
+	T tex2D(const float u, const float v) {
+		int x = u, y = v;
+		x = Math::clamp(x, 0, width - 1);
+		y = Math::clamp(y, 0, height - 1);
+		return buffer[y * width + x];
+	}
 };
 
 typedef FrameBuffer<float> FloatBuffer;

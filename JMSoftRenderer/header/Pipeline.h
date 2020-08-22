@@ -77,7 +77,6 @@ private:
 	}
 
 
-
 public:
 	Pipeline(IntBuffer& renderBuffer, size_t shadowMapSize, ProjectionMethod method = ProjectionMethod::Perspective) :
 		renderBuffer(renderBuffer),

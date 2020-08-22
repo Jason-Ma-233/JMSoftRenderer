@@ -24,6 +24,8 @@ void Pipeline::rasterizeScanline(Scanline& scanline) {
 			auto clipPos_light = _matrix_light_VP.apply(v.worldPos);
 			Vector3 screenPos_light;
 			transformHomogenize(clipPos_light, screenPos_light, shadowBuffer.get_width(), shadowBuffer.get_height());
+			float shadowZ = shadowBuffer.tex2D(screenPos_light.x, screenPos_light.y);
+			float shadowAttenuation = 1.0f / screenPos_light.z < shadowZ ? 0.0f : 1.0f;
 
 			// normal
 			v.normal.normalize();
@@ -31,6 +33,8 @@ void Pipeline::rasterizeScanline(Scanline& scanline) {
 			c.r = v.normal.x;
 			c.g = v.normal.y;
 			c.b = v.normal.z;
+
+			c *= shadowAttenuation;
 
 			/*
 			// depth
@@ -206,7 +210,7 @@ void Pipeline::renderMeshes(const Scene& scene)
 		currentShadeFunc = mesh.shadeFunc;
 		currentTexture = mesh.texture;
 
-#pragma omp parallel for schedule(dynamic)
+		//#pragma omp parallel for schedule(dynamic)
 		for (int i = 0; i < mesh.indices.size(); i += 3)
 		{
 			const Vertex* v[3] = {
@@ -236,7 +240,7 @@ void Pipeline::renderShadowMap(const Scene& scene)
 		currentShadeFunc = mesh.shadeFunc;
 		currentTexture = mesh.texture;
 
-#pragma omp parallel for schedule(dynamic)
+		//#pragma omp parallel for schedule(dynamic)
 		for (int i = 0; i < mesh.indices.size(); i += 3)
 		{
 			const Vertex* v[3] = {
