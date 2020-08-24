@@ -34,6 +34,7 @@ int	main(void) {
 	// Load .obj File
 	objl::Loader loader;
 	const char* obj_path = "../../../../models/spot/_spot_triangulated_good.obj";
+	//const char* obj_path = "../../../../models/spot/triangle.obj";
 	if (!loader.LoadFile(obj_path)) {
 		cout << "File loading failed!" << endl;
 		return 1;

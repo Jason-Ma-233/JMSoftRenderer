@@ -25,7 +25,12 @@ void Pipeline::rasterizeScanline(Scanline& scanline) {
 			Vector3 screenPos_light;
 			transformHomogenize(clipPos_light, screenPos_light, shadowBuffer.get_width(), shadowBuffer.get_height());
 			float shadowZ = shadowBuffer.tex2D(screenPos_light.x, screenPos_light.y);
-			float shadowAttenuation = 1.0f / screenPos_light.z < shadowZ ? 0.0f : 1.0f;
+			//float shadowAttenuation = 1.0f / screenPos_light.z < shadowZ - 0.15f ? 0.0f : 1.0f;
+			float shadowAttenuation = 1 - Math::clamp(shadowZ - 1.0f / screenPos_light.z - 0.2);
+
+			//size_t _x = (size_t)screenPos_light.x, _y = (size_t)screenPos_light.y;
+			//if (_x >= 0 && _y >= 0 && _x < renderBuffer.get_width() && _y < renderBuffer.get_height())
+			//	renderBuffer.set(_x, _y, RGBColor(shadowZ * 0.01f, shadowZ * 0.01f, shadowZ * 0.01f).toRGBInt());
 
 			// normal
 			v.normal.normalize();
@@ -45,11 +50,14 @@ void Pipeline::rasterizeScanline(Scanline& scanline) {
 			*/
 
 			fbPtr[x] = c.toRGBInt();
+			//fbPtr[x] = RGBColor(shadowZ * 0.01f, shadowZ * 0.01f, shadowZ * 0.01f).toRGBInt();
+			//fbPtr[x] = RGBColor(v.worldPos.x, v.worldPos.y, v.worldPos.z).toRGBInt();
 			zbPtr[x] = rhw;
 		}
 		vi += scanline.step;// 插值结果分布到每像素
 	}
 	//omp_unset_lock(locks + scanline.y);
+
 }
 
 void Pipeline::rasterizeShadowMap(Scanline& scanline)
@@ -64,10 +72,12 @@ void Pipeline::rasterizeShadowMap(Scanline& scanline)
 		float z = 1.0f / vi.point.z;
 		if (z >= zbPtr[x]) {
 			fbPtr[x] = RGBColor(z * 0.01f, z * 0.01f, z * 0.01f).toRGBInt();
+			//fbPtr[x] = RGBColor(vi.worldPos.x, vi.worldPos.y, vi.worldPos.z).toRGBInt();
 			zbPtr[x] = z;
 		}
 		vi += scanline.step;// 插值结果分布到每像素
 	}
+
 }
 
 void Pipeline::rasterizeTriangle(const SplitedTriangle& st) {
@@ -210,7 +220,7 @@ void Pipeline::renderMeshes(const Scene& scene)
 		currentShadeFunc = mesh.shadeFunc;
 		currentTexture = mesh.texture;
 
-		//#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(dynamic)
 		for (int i = 0; i < mesh.indices.size(); i += 3)
 		{
 			const Vertex* v[3] = {
@@ -240,7 +250,7 @@ void Pipeline::renderShadowMap(const Scene& scene)
 		currentShadeFunc = mesh.shadeFunc;
 		currentTexture = mesh.texture;
 
-		//#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(dynamic)
 		for (int i = 0; i < mesh.indices.size(); i += 3)
 		{
 			const Vertex* v[3] = {

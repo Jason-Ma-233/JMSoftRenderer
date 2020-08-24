@@ -43,6 +43,7 @@ struct TVertex {
 
 	void init_rhw(float w) {
 		rhw = 1.0f / w;
+		worldPos *= rhw;
 		color *= rhw;
 		texCoord *= rhw;
 		normal *= rhw;
