@@ -24,9 +24,8 @@ void Pipeline::rasterizeScanline(Scanline& scanline) {
 			auto clipPos_light = _matrix_light_VP.apply(v.worldPos);
 			Vector3 screenPos_light;
 			transformHomogenize(clipPos_light, screenPos_light, shadowBuffer.get_width(), shadowBuffer.get_height());
-			float shadowZ = shadowBuffer.tex2D(screenPos_light.x, screenPos_light.y);
-			//float shadowAttenuation = 1.0f / screenPos_light.z < shadowZ - 0.15f ? 0.0f : 1.0f;
-			float shadowAttenuation = 1 - Math::clamp(shadowZ - 1.0f / screenPos_light.z - 0.2);
+			float shadowZ = shadowBuffer.tex2DScreenSpace(screenPos_light.x, screenPos_light.y);
+			float shadowAttenuation = 1 - Math::clamp(shadowZ - 1.0f / screenPos_light.z - 0.5f);
 
 			//size_t _x = (size_t)screenPos_light.x, _y = (size_t)screenPos_light.y;
 			//if (_x >= 0 && _y >= 0 && _x < renderBuffer.get_width() && _y < renderBuffer.get_height())

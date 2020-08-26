@@ -55,10 +55,12 @@ public:
 	}
 
 	// texture sampling
-	T tex2D(const float u, const float v) {
-		int x = u, y = v;
-		x = Math::clamp(x, 0, width - 1);
-		y = Math::clamp(y, 0, height - 1);
+	T tex2DScreenSpace(float u, float v) {
+		u = ((u % width) + width) % width;
+		v = ((v % height) + height) % height;
+		int x = u, y = v;// left point
+		int x2 = (x + 1) % width, y2 = (y + 1) % height;// right point
+
 		return buffer[y * width + x];
 	}
 };
