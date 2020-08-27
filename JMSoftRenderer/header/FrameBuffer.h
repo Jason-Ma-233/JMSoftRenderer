@@ -72,7 +72,7 @@ public:
 	}
 
 	T tex2D(float u, float v) {
-		return tex2DScreenSpace(u * width, v * height);
+		return tex2DScreenSpace(u * width, (1 - v) * height);
 	}
 };
 

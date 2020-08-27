@@ -2,6 +2,45 @@
 #include <algorithm>
 
 
+void Pipeline::shading(TVertex& v, RGBColor& c) {
+	// Shadowmap sampling
+	auto clipPos_light = _matrix_light_VP.apply(v.worldPos + v.normal * 0.05f);// normal offset bias
+	Vector3 screenPos_light;
+	transformHomogenize(clipPos_light, screenPos_light, shadowBuffer.get_width(), shadowBuffer.get_height());
+	float shadowZ = shadowBuffer.tex2DScreenSpace(screenPos_light.x, screenPos_light.y);
+	//float shadowAttenuation = 1 - Math::clamp((shadowZ - 1.0f / screenPos_light.z - 0.1f) * 3.0f);
+	float shadowAttenuation = shadowZ - 1.0f / screenPos_light.z > 0.1f ? 0 : 1;
+
+	Vector3 N = v.normal.normalize(),
+		V = (cameraPos - v.worldPos).normalize(),
+		L = lightDir,
+		H = (L + V).normalize();
+	float NdotL = N.dot(L);
+
+	/*
+	// normal
+	v.normal.normalize();
+	v.normal = v.normal * 0.5f + 0.5f;
+	c.r = v.normal.x;
+	c.g = v.normal.y;
+	c.b = v.normal.z;
+	*/
+
+
+	// texture
+	c.setRGBInt(currentTexture->tex2D(v.texCoord.x, v.texCoord.y));
+
+	c *= MIN(shadowAttenuation * 0.5f + 0.5f, NdotL * 0.5f + 0.5f);
+
+	/*
+	// depth
+	float z = projectionMethod == ProjectionMethod::Perspective ? rhw : vi.point.z;
+	c.r = z;
+	c.g = z;
+	c.b = z;
+	*/
+
+}
 
 void Pipeline::rasterizeScanline(Scanline& scanline) {
 	if (scanline.y < 0 || scanline.y >= targetHeight) return;
@@ -18,44 +57,11 @@ void Pipeline::rasterizeScanline(Scanline& scanline) {
 		float rhw = projectionMethod == ProjectionMethod::Perspective ? vi.rhw : 1.0f / vi.point.z;
 		if (rhw >= zbPtr[x]) {  // 比较深度
 			v = vi * (1.0f / rhw);// 线性插值后恢复
+
 			// shading
-
-			// Shadowmap sampling
-			auto clipPos_light = _matrix_light_VP.apply(v.worldPos + v.normal * 0.05f);// normal offset bias
-			Vector3 screenPos_light;
-			transformHomogenize(clipPos_light, screenPos_light, shadowBuffer.get_width(), shadowBuffer.get_height());
-			float shadowZ = shadowBuffer.tex2DScreenSpace(screenPos_light.x, screenPos_light.y);
-			//float shadowAttenuation = 1 - Math::clamp((shadowZ - 1.0f / screenPos_light.z - 0.1f) * 3.0f);
-			float shadowAttenuation = shadowZ - 1.0f / screenPos_light.z > 0.1f ? 0 : 1;
-
-			/*
-			// normal
-			v.normal.normalize();
-			v.normal = v.normal * 0.5f + 0.5f;
-			c.r = v.normal.x;
-			c.g = v.normal.y;
-			c.b = v.normal.z;
-			*/
-
-			// texture
-			c.setRGBInt(currentTexture->tex2D(v.texCoord.x, v.texCoord.y));
-			//c.r = v.texCoord.x;
-			//c.g = v.texCoord.y;
-			//c.b = 0;
-
-			c *= shadowAttenuation * 0.5f + 0.5f;
-
-			/*
-			// depth
-			float z = projectionMethod == ProjectionMethod::Perspective ? rhw : vi.point.z;
-			c.r = z;
-			c.g = z;
-			c.b = z;
-			*/
+			shading(v, c);
 
 			fbPtr[x] = c.toRGBInt();
-			//fbPtr[x] = RGBColor(shadowZ * 0.01f, shadowZ * 0.01f, shadowZ * 0.01f).toRGBInt();
-			//fbPtr[x] = RGBColor(v.worldPos.x, v.worldPos.y, v.worldPos.z).toRGBInt();
 			zbPtr[x] = rhw;
 		}
 		vi += scanline.step;// 插值结果分布到每像素
@@ -218,6 +224,8 @@ void Pipeline::renderMeshes(const Scene& scene)
 	_matrix_VP = scene.view * scene.projection;
 	_matrix_MVP = scene.model * _matrix_VP;
 	_matrix_light_VP = scene.view_light * scene.projection_light;
+	lightDir = scene.view_light.applyDir(Vector3(0, 0, 1));
+	cameraPos = Vector3(_matrix_V[0][3], _matrix_V[1][3], _matrix_V[2][3]);
 
 	for (auto& mesh : scene.meshes)
 	{

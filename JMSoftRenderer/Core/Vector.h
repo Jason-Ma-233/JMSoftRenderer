@@ -237,6 +237,10 @@ public:
 		return float(x * x + y * y + z * z);
 	}
 
+	inline float dot(const Vector3& v) const {
+		return x * v.x + y * v.y + z * v.z;
+	}
+
 	inline friend float distance(const Vector3& v1, const Vector3& v2) {
 		float dx = v1.x - v2.x;
 		float dy = v1.x - v2.x;

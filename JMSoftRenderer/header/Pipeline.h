@@ -31,6 +31,8 @@ private:
 	void (Pipeline::* currentRasterizeScanlineFunc)(Scanline&);	// 当前的扫描线光栅化函数指针
 
 	Matrix _matrix_M, _matrix_V, _matrix_P, _matrix_VP, _matrix_MVP, _matrix_light_VP;
+	Vector3 lightDir, cameraPos;
+
 
 	int targetWidth;
 	int targetHeight;
@@ -46,6 +48,7 @@ private:
 	void rasterizeTriangle(const SplitedTriangle& st);
 	// 对一个三角形变换、裁剪、生成扫描线
 	void renderTriangle(const Vertex* v[3]);
+	void shading(TVertex& v, RGBColor& c);
 
 	// 画像素点(会检查越界)
 	inline void drawPixel(int x, int y, const RGBColor& color) {

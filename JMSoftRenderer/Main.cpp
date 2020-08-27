@@ -33,10 +33,10 @@ int	main(void) {
 
 	// Load .obj File
 	objl::Loader loader;
-	const char* texture_path = "../../../../models/spot/uv_texture.png";
-	//const char* texture_path = "../../../../models/spot/spot_texture.png";
-	const char* obj_path = "../../../../models/spot/triangle.obj";
-	//const char* obj_path = "../../../../models/spot/_spot_triangulated_good.obj";
+	//const char* texture_path = "../../../../models/spot/uv_texture.png";
+	const char* texture_path = "../../../../models/spot/spot_texture.png";
+	//const char* obj_path = "../../../../models/spot/triangle.obj";
+	const char* obj_path = "../../../../models/spot/_spot_triangulated_good.obj";
 	auto tex = CreateTexture(texture_path);
 	if (!loader.LoadFile(obj_path)) {
 		cout << "File loading failed!" << endl;
