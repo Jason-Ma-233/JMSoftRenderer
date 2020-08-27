@@ -20,25 +20,30 @@ void Pipeline::rasterizeScanline(Scanline& scanline) {
 			v = vi * (1.0f / rhw);// 线性插值后恢复
 			// shading
 
-			// samping shadow
-			auto clipPos_light = _matrix_light_VP.apply(v.worldPos);
+			// Shadowmap sampling
+			auto clipPos_light = _matrix_light_VP.apply(v.worldPos + v.normal * 0.05f);// normal offset bias
 			Vector3 screenPos_light;
 			transformHomogenize(clipPos_light, screenPos_light, shadowBuffer.get_width(), shadowBuffer.get_height());
 			float shadowZ = shadowBuffer.tex2DScreenSpace(screenPos_light.x, screenPos_light.y);
-			float shadowAttenuation = 1 - Math::clamp(shadowZ - 1.0f / screenPos_light.z - 0.5f);
+			//float shadowAttenuation = 1 - Math::clamp((shadowZ - 1.0f / screenPos_light.z - 0.1f) * 3.0f);
+			float shadowAttenuation = shadowZ - 1.0f / screenPos_light.z > 0.1f ? 0 : 1;
 
-			//size_t _x = (size_t)screenPos_light.x, _y = (size_t)screenPos_light.y;
-			//if (_x >= 0 && _y >= 0 && _x < renderBuffer.get_width() && _y < renderBuffer.get_height())
-			//	renderBuffer.set(_x, _y, RGBColor(shadowZ * 0.01f, shadowZ * 0.01f, shadowZ * 0.01f).toRGBInt());
-
+			/*
 			// normal
 			v.normal.normalize();
 			v.normal = v.normal * 0.5f + 0.5f;
 			c.r = v.normal.x;
 			c.g = v.normal.y;
 			c.b = v.normal.z;
+			*/
 
-			c *= shadowAttenuation;
+			// texture
+			c.setRGBInt(currentTexture->tex2D(v.texCoord.x, v.texCoord.y));
+			//c.r = v.texCoord.x;
+			//c.g = v.texCoord.y;
+			//c.b = 0;
+
+			c *= shadowAttenuation * 0.5f + 0.5f;
 
 			/*
 			// depth
@@ -70,7 +75,7 @@ void Pipeline::rasterizeShadowMap(Scanline& scanline)
 	for (int x = x0; x <= x1; x++) {
 		float z = 1.0f / vi.point.z;
 		if (z >= zbPtr[x]) {
-			fbPtr[x] = RGBColor(z * 0.01f, z * 0.01f, z * 0.01f).toRGBInt();
+			fbPtr[x] = RGBColor(z * 0.1f, z * 0.1f, z * 0.1f).toRGBInt();
 			//fbPtr[x] = RGBColor(vi.worldPos.x, vi.worldPos.y, vi.worldPos.z).toRGBInt();
 			zbPtr[x] = z;
 		}

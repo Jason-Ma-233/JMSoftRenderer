@@ -56,12 +56,23 @@ public:
 
 	// texture sampling
 	T tex2DScreenSpace(float u, float v) {
-		u = ((u % width) + width) % width;
-		v = ((v % height) + height) % height;
-		int x = u, y = v;// left point
-		int x2 = (x + 1) % width, y2 = (y + 1) % height;// right point
+		int x = u, y = v;// min point
+		int x2 = x + 1, y2 = y + 1;// max point
+		if (x<0 || y<0 || x>width - 1 || y>height - 1)return 0;
+		x2 = x2 == width ? 0 : x2, y2 = y2 == height ? 0 : y2;
 
-		return buffer[y * width + x];
+		auto leftBottom = buffer[y * width + x],
+			leftTop = buffer[y2 * width + x],
+			rightBottom = buffer[y * width + x2],
+			rightTop = buffer[y2 * width + x2];
+		auto top = Math::lerp(leftTop, rightTop, x2 - x);
+		auto bottom = Math::lerp(leftBottom, rightBottom, x2 - x);
+
+		return Math::lerp(bottom, top, y2 - y);
+	}
+
+	T tex2D(float u, float v) {
+		return tex2DScreenSpace(u * width, v * height);
 	}
 };
 
