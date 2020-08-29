@@ -4,7 +4,7 @@
 
 using namespace std;
 
-void addMesh(Scene& scene, vector<objl::Mesh> objMeshes, shared_ptr<IntBuffer> texture) {
+void addMesh(Scene& scene, vector<objl::Mesh> objMeshes, shared_ptr<IntBuffer> texture, RGBColor color = Colors::White) {
 	for (auto& objMesh : objMeshes)
 	{
 		Mesh mesh;
@@ -20,6 +20,7 @@ void addMesh(Scene& scene, vector<objl::Mesh> objMeshes, shared_ptr<IntBuffer> t
 		}
 		mesh.indices = objMesh.Indices;
 		mesh.texture = texture;
+		mesh.color = color;
 		scene.addMesh(mesh);
 	}
 }
@@ -36,7 +37,8 @@ int	main(void) {
 	//const char* texture_path = "../../../../models/spot/uv_texture.png";
 	const char* texture_path = "../../../../models/spot/spot_texture.png";
 	//const char* obj_path = "../../../../models/spot/triangle.obj";
-	const char* obj_path = "../../../../models/spot/_spot_triangulated_good.obj";
+	//const char* obj_path = "../../../../models/spot/_spot_triangulated_good.obj";
+	const char* obj_path = "../../../../models/spot/sphere.obj";
 	auto tex = CreateTexture(texture_path);
 	if (!loader.LoadFile(obj_path)) {
 		cout << "File loading failed!" << endl;
@@ -44,16 +46,20 @@ int	main(void) {
 	}
 
 	Scene scene;
-	scene.setLight(
-		Matrix().rotate(0, 1, 0, 70.0f).rotate(1, 0, 0, -60.0f).translate(-0.2f, 0.3f, 3.5f),
-		4.0f, 4.0f, 10.0f
+	scene.setLight(// TODO:只操作lightPos，然后重建view矩阵
+		Matrix().rotate(0, 1, 0, 10.0f).rotate(1, 0, 0, -30.0f).translate(-0.2f, 0.3f, 3.5f),
+		4.0f, 4.0f, 10.0f,
+		//Matrix().rotate(0, 1, 0, 70.0f).rotate(1, 0, 0, -60.0f).translate(-0.2f, 0.3f, 3.5f),
+		//4.0f, 4.0f, 10.0f,
+		2.0f, RGBColor(0.98f, 0.92f, 0.89f)
 	);
 
 	scene.setViewMatrix(Matrix().translate(0, 0, 2.5f));
 	scene.setPerspective(60.0f, colorBuffer.get_aspect(), 0.1f, 10.0f);
 
 
-	addMesh(scene, loader.LoadedMeshes, tex);
+	//addMesh(scene, loader.LoadedMeshes, tex);
+	addMesh(scene, loader.LoadedMeshes, NULL, RGBColor(0.5f));
 
 
 	while (window.is_run())

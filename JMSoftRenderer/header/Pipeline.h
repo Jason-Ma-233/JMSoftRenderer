@@ -28,10 +28,12 @@ private:
 	////       当前渲染的状态变量       ////
 	shared_ptr<IntBuffer> currentTexture;						// 当前Mesh使用的纹理
 	ShadeFunc currentShadeFunc;									// 当前Mesh使用的着色函数
+	RGBColor currentColor;										// 当前Mesh的颜色
 	void (Pipeline::* currentRasterizeScanlineFunc)(Scanline&);	// 当前的扫描线光栅化函数指针
 
 	Matrix _matrix_M, _matrix_V, _matrix_P, _matrix_VP, _matrix_MVP, _matrix_light_VP;
-	Vector3 lightDir, cameraPos;
+	Vector3 cameraPos;
+	DirLight dirLight;
 
 
 	int targetWidth;

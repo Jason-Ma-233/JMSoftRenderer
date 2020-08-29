@@ -81,6 +81,9 @@ namespace Math {
 		return x - std::floor(x);
 	}
 
+	inline float pow3(float x) { return x * x * x; }
+	inline float pow4(float x) { float x2 = x * x; return x2 * x2; }
+	inline float pow5(float x) { float x2 = x * x; return x2 * x2 * x; }
 	inline float fastPow(float a, float b) {
 		union {
 			float d;

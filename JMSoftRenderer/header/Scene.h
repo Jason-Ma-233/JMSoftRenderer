@@ -2,10 +2,16 @@
 
 #include "../Core/Matrix.h"
 
-
 struct Triangle
 {
 	Vector3 vertex[3];
+};
+
+struct DirLight
+{
+	Vector3 dir;
+	float intensity;
+	RGBColor color;
 };
 
 class Scene {
@@ -17,6 +23,7 @@ private:
 	Matrix projection;
 
 	Matrix view_light, projection_light;
+	DirLight dirLight;
 
 	vector<Mesh> meshes;
 
@@ -30,9 +37,12 @@ public:
 	void setProjectionMatrix(Matrix projection) { this->projection = projection; }
 	void setPerspective(float fov, float aspect, float zNear, float zFar) { projection.setPerspective(fov, aspect, zNear, zFar); }
 	void setOrthographic(float width, float height, float depth) { projection.scale(2.0f / width, 2.0f / height, 1.0f / depth); }
-	void setLight(Matrix view, float width, float height, float depth) {
+	void setLight(Matrix view, float width, float height, float depth, float intensity, RGBColor color) {
 		this->view_light = view;
 		projection_light.scale(2.0f / width, 2.0f / height, 1.0f / depth);
+		dirLight.dir = view_light.applyDir(Vector3(0, 0, 1));
+		dirLight.color = color;
+		dirLight.intensity = intensity;
 	}
 
 	void cameraTranslate(float y, float z) { this->view.translate(0, y, z); }

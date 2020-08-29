@@ -177,6 +177,12 @@ public:
 	inline Vector3 operator-(const Vector3& v) const {
 		return Vector3(x - v.x, y - v.y, z - v.z);
 	}
+	inline Vector3 operator+(const float v) const {
+		return Vector3(x + v, y + v, z + v);
+	}
+	inline Vector3 operator-(const float v) const {
+		return Vector3(x - v, y - v, z - v);
+	}
 
 	inline float operator*(const Vector3& v) const {
 		return x * v.x + y * v.y + z * v.z;
@@ -385,3 +391,8 @@ public:
 		return zeroVector;
 	}
 };
+
+namespace Vectors {
+	const Vector3 one_v3 = Vector3(1.0f);
+	const Vector3 zero_v3 = Vector3(0.0f);
+}

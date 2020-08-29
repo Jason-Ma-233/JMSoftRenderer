@@ -10,6 +10,7 @@ public:
 	RGBColor() : r(0.f), g(0.f), b(0.f) {}
 	RGBColor(const RGBColor& color) : r(color.r), g(color.g), b(color.b) {}
 	RGBColor(float r, float g, float b) : r(r), g(g), b(b) {}
+	RGBColor(float c) : r(c), g(c), b(c) {}
 	~RGBColor() {}
 
 	float operator[](size_t i) { return (&r)[i]; }

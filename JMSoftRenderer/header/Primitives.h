@@ -25,6 +25,7 @@ struct Mesh {
 	vector<unsigned int> indices;
 	shared_ptr<IntBuffer> texture;
 	ShadeFunc shadeFunc;
+	RGBColor color;
 };
 
 // 带透视矫正的插值顶点
