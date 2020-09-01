@@ -8,12 +8,12 @@ void Pipeline::shading(TVertex& v, RGBColor& c) {
 	Vector3 screenPos_light;
 	transformHomogenize(clipPos_light, screenPos_light, shadowBuffer.get_width(), shadowBuffer.get_height());
 	float shadowZ = shadowBuffer.tex2DScreenSpace(screenPos_light.x, screenPos_light.y);
-	float shadowAttenuation = 1 - Math::clamp((shadowZ - 1.0f / screenPos_light.z - 0.1f) * 2.0f);
-	//float shadowAttenuation = shadowZ - 1.0f / screenPos_light.z > 0.1f ? 0 : 1;
+	//float shadowAttenuation = 1 - Math::clamp((shadowZ - 1.0f / screenPos_light.z - 0.1f) * 2.0f);
+	float shadowAttenuation = shadowZ - 1.0f / screenPos_light.z > 0.1f ? 0 : 1;
 
 	Vector3 N = v.normal.normalize(),
 		V = (-cameraPos - v.worldPos).normalize(),
-		L = -dirLight.dir;
+		L = dirLight.dir;
 	float NdotL = Math::clamp(N.dot(L));
 
 	// texture samping
@@ -217,7 +217,7 @@ void Pipeline::renderMeshes(const Scene& scene)
 		currentTexture = mesh.texture;
 		currentColor = mesh.color;
 
-#pragma omp parallel for schedule(dynamic)
+//#pragma omp parallel for schedule(dynamic)
 		for (int i = 0; i < mesh.indices.size(); i += 3)
 		{
 			const Vertex* v[3] = {
@@ -244,7 +244,7 @@ void Pipeline::renderShadowMap(const Scene& scene)
 
 	for (auto& mesh : scene.meshes)
 	{
-#pragma omp parallel for schedule(dynamic)
+//#pragma omp parallel for schedule(dynamic)
 		for (int i = 0; i < mesh.indices.size(); i += 3)
 		{
 			const Vertex* v[3] = {

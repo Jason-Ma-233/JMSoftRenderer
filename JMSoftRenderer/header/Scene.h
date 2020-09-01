@@ -44,6 +44,14 @@ public:
 		dirLight.color = color;
 		dirLight.intensity = intensity;
 	}
+	void setLight(Vector3 pos, float width, float height, float depth, float intensity, RGBColor color) {
+		this->view_light = Matrix().setLookAt(pos, Vectors::zero_v3);
+		projection_light.scale(2.0f / width, 2.0f / height, 1.0f / depth);
+		dirLight.dir = pos.normalize();
+		dirLight.color = color;
+		dirLight.intensity = intensity;
+	}
+
 
 	void cameraTranslate(float y, float z) { this->view.translate(0, y, z); }
 	void modelRotate(float angle) { this->model.rotate(0, 1, 0, angle); }

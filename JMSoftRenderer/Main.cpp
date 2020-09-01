@@ -46,8 +46,8 @@ int	main(void) {
 	}
 
 	Scene scene;
-	scene.setLight(// TODO:只操作lightPos，然后重建view矩阵
-		Matrix().rotate(0, 1, 0, 10.0f).rotate(1, 0, 0, -30.0f).translate(-0.2f, 0.3f, 3.5f),
+	scene.setLight(
+		Vector3(1.0f, 1.0f, -1.0f),
 		4.0f, 4.0f, 10.0f,
 		//Matrix().rotate(0, 1, 0, 70.0f).rotate(1, 0, 0, -60.0f).translate(-0.2f, 0.3f, 3.5f),
 		//4.0f, 4.0f, 10.0f,
