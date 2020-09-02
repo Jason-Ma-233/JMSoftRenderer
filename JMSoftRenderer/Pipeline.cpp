@@ -4,12 +4,15 @@
 
 void Pipeline::shading(TVertex& v, RGBColor& c) {
 	// Shadowmap sampling
-	auto clipPos_light = _matrix_light_VP.apply(v.worldPos + v.normal * 0.05f);// normal offset bias
-	Vector3 screenPos_light;
-	transformHomogenize(clipPos_light, screenPos_light, shadowBuffer.get_width(), shadowBuffer.get_height());
-	float shadowZ = shadowBuffer.tex2DScreenSpace(screenPos_light.x, screenPos_light.y);
-	//float shadowAttenuation = 1 - Math::clamp((shadowZ - 1.0f / screenPos_light.z - 0.1f) * 2.0f);
-	float shadowAttenuation = shadowZ - 1.0f / screenPos_light.z > 0.1f ? 0 : 1;
+	float shadowAttenuation = 1;
+	if (enableShadow) {
+		auto clipPos_light = _matrix_light_VP.apply(v.worldPos + v.normal * 0.05f);// normal offset bias
+		Vector3 screenPos_light;
+		transformHomogenize(clipPos_light, screenPos_light, shadowBuffer.get_width(), shadowBuffer.get_height());
+		float shadowZ = shadowBuffer.tex2DScreenSpace(screenPos_light.x, screenPos_light.y);
+		//float shadowAttenuation = 1 - Math::clamp((shadowZ - 1.0f / screenPos_light.z - 0.1f) * 2.0f);
+		shadowAttenuation = shadowZ - 1.0f / screenPos_light.z > 0.1f ? 0 : 1;
+	}
 
 	Vector3 N = v.normal.normalize(),
 		V = (-cameraPos - v.worldPos).normalize(),
@@ -18,9 +21,9 @@ void Pipeline::shading(TVertex& v, RGBColor& c) {
 
 	// texture samping
 	c = currentColor;
-	if (currentTexture != NULL) c *= currentTexture->tex2D(v.texCoord.x, v.texCoord.y);
+	if (currentTexture != NULL) c *= RGBColor().setRGBInt(currentTexture->tex2D(v.texCoord.x, v.texCoord.y));
 
-	Shader::PhysicallyBasedShading(c, 0.2, 0.0, N, L, V, NdotL);
+	Shader::PhysicallyBasedShading(c, roughness, metallic, N, L, V, NdotL);
 	c *= dirLight.intensity * dirLight.color * NdotL * shadowAttenuation;
 
 
@@ -217,7 +220,7 @@ void Pipeline::renderMeshes(const Scene& scene)
 		currentTexture = mesh.texture;
 		currentColor = mesh.color;
 
-//#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(dynamic)
 		for (int i = 0; i < mesh.indices.size(); i += 3)
 		{
 			const Vertex* v[3] = {
@@ -244,7 +247,7 @@ void Pipeline::renderShadowMap(const Scene& scene)
 
 	for (auto& mesh : scene.meshes)
 	{
-//#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(dynamic)
 		for (int i = 0; i < mesh.indices.size(); i += 3)
 		{
 			const Vertex* v[3] = {

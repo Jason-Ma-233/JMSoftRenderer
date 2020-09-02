@@ -129,11 +129,11 @@ void Window::update_fps() { // ms
 		current_fps = frameCount;
 		frameCount = 0;
 		lastTime = curTime;
-
-		std::ostringstream s;
-		s << window_title << " Fps:" << current_fps;
-		setTitle(_T(s.str().c_str()));
 	}
+
+	std::ostringstream s;
+	s << window_title << " Fps:" << current_fps << "    " << title;
+	setTitle(_T(s.str().c_str()));
 }
 
 int* Window::operator()(unsigned int index) {

@@ -14,7 +14,10 @@ enum ProjectionMethod
 };
 
 class Pipeline {
-	//public:
+public:
+	bool enableShadow;
+	// tmp
+	float roughness, metallic;
 
 private:
 	////          »º³åÇøBuffer          ////
@@ -83,7 +86,7 @@ private:
 
 
 public:
-	Pipeline(IntBuffer& renderBuffer, size_t shadowMapSize, ProjectionMethod method = ProjectionMethod::Perspective) :
+	Pipeline(IntBuffer& renderBuffer, size_t shadowMapSize, ProjectionMethod method = ProjectionMethod::Perspective, bool enableShadow = true) :
 		renderBuffer(renderBuffer),
 		targetWidth((int)renderBuffer.get_width()),
 		targetHeight((int)renderBuffer.get_height()),
@@ -91,8 +94,8 @@ public:
 			renderBuffer.get_height()),
 		shadowBuffer(shadowMapSize, shadowMapSize),
 		projectionMethod(method),
-		currentRasterizeScanlineFunc(&Pipeline::rasterizeScanline)
-	{}
+		currentRasterizeScanlineFunc(&Pipeline::rasterizeScanline),
+		enableShadow(enableShadow) {}
 	~Pipeline() {}
 
 	void clearBuffers(RGBColor clearColor) {

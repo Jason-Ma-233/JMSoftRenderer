@@ -10,6 +10,8 @@
 #endif
 
 class Window {
+public:
+	std::string title;
 private:
 	bool screen_running = false;
 	int screen_w, screen_h;

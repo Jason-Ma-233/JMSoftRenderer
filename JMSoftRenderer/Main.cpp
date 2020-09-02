@@ -29,7 +29,7 @@ void addMesh(Scene& scene, vector<objl::Mesh> objMeshes, shared_ptr<IntBuffer> t
 int	main(void) {
 
 	IntBuffer colorBuffer(1280, 720);
-	Pipeline pipeline(colorBuffer, 512);
+	Pipeline pipeline(colorBuffer, 512, ProjectionMethod::Perspective, false);
 	Window window(colorBuffer.get_width(), colorBuffer.get_height(), _T("JM Soft Renderer  "));
 
 	// Load .obj File
@@ -58,18 +58,20 @@ int	main(void) {
 	scene.setPerspective(60.0f, colorBuffer.get_aspect(), 0.1f, 10.0f);
 
 
-	//addMesh(scene, loader.LoadedMeshes, tex);
-	addMesh(scene, loader.LoadedMeshes, NULL, RGBColor(0.5f));
+	addMesh(scene, loader.LoadedMeshes, tex);
+	//addMesh(scene, loader.LoadedMeshes, NULL, RGBColor(0.5f));
 
 
 	while (window.is_run())
 	{
 		pipeline.clearBuffers(Colors::Black);
 
-		pipeline.renderShadowMap(scene);
+		if (pipeline.enableShadow)
+			pipeline.renderShadowMap(scene);
 		pipeline.renderMeshes(scene);
 
 		memcpy(window(), colorBuffer(), colorBuffer.get_size() * sizeof(int));
+		window.title = (std::ostringstream() << "Roughness:" << pipeline.roughness << "  Metallic:" << pipeline.metallic).str();
 		window.update();
 
 		// input
@@ -82,6 +84,13 @@ int	main(void) {
 		if (window.is_key('A')) scene.modelRotate(2.0f);
 		else if (window.is_key('D')) scene.modelRotate(-2.0f);
 		else scene.modelRotate(0.25f);
+
+		if (window.is_key(VK_LEFT)) pipeline.roughness -= 0.01f;
+		if (window.is_key(VK_RIGHT)) pipeline.roughness += 0.01f;
+		if (window.is_key(VK_UP)) pipeline.metallic += 0.01f;
+		if (window.is_key(VK_DOWN)) pipeline.metallic -= 0.01f;
+		pipeline.roughness = Math::clamp(pipeline.roughness);
+		pipeline.metallic = Math::clamp(pipeline.metallic);
 	}
 
 
