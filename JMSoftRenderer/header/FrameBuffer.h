@@ -13,7 +13,7 @@ protected:
 	T* buffer;
 
 public:
-	FrameBuffer(size_t width, size_t height) : width(width), height(height), size(width* height), aspect((float)width / height) {
+	FrameBuffer(size_t width = 2, size_t height = 2) : width(width), height(height), size(width* height), aspect((float)width / height) {
 		buffer = new T[size];
 	}
 	~FrameBuffer() {
@@ -81,3 +81,35 @@ typedef FrameBuffer<int> IntBuffer;
 typedef FrameBuffer<RGBColor> ColorBuffer;
 
 shared_ptr<IntBuffer> CreateTexture(const char* filename);
+IntBuffer& DownSample(IntBuffer& buffer) {
+	IntBuffer newBuffer = IntBuffer(buffer.get_width() * 0.5f, buffer.get_height() * 0.5f);
+	for (size_t x = 0; x < newBuffer.get_width(); x++)
+	{
+		for (size_t y = 0; y < newBuffer.get_height(); y++) {
+			RGBColor x1 = RGBColor(buffer.tex2DScreenSpace(x * 2, y * 2));
+			RGBColor x2 = RGBColor(buffer.tex2DScreenSpace(x * 2 + 1, y * 2));
+			RGBColor y1 = RGBColor(buffer.tex2DScreenSpace(x * 2, y * 2 + 1));
+			RGBColor y2 = RGBColor(buffer.tex2DScreenSpace(x * 2 + 1, y * 2 + 1));
+			newBuffer.set(x, y, (x1 * 0.25f + x2 * 0.25f + y1 * 0.25f + y2 * 0.25f).toRGBInt());
+		}
+	}
+	return newBuffer;
+}
+
+class MipMap {
+private:
+	IntBuffer maps[5];
+
+public:
+	MipMap(IntBuffer& buffer) {
+		maps[0] = buffer;
+		maps[1] = DownSample(buffer);
+		maps[2] = DownSample(maps[1]);
+		maps[4] = DownSample(maps[3]);
+		maps[3] = DownSample(maps[2]);
+	}
+	~MipMap() {}
+
+	IntBuffer& operator[](size_t mipmapLevel) { return maps[Math::clamp(mipmapLevel, 0, 4)]; }
+};
+

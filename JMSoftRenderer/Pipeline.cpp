@@ -83,6 +83,7 @@ void Pipeline::rasterizeTriangle(const SplitedTriangle& st) {
 		int y1 = (int)st.left.point.y;
 		float yl = st.left.point.y - st.bottom.point.y;
 
+
 		for (int y = y0; y <= y1; y++) {
 			float factor = (y - st.bottom.point.y) / yl;
 			TVertex left = Math::lerp(st.bottom, st.left, factor);
