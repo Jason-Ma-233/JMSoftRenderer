@@ -15,3 +15,19 @@ shared_ptr<IntBuffer> CreateTexture(const char* filename) {
 	stbi_image_free(data);
 	return buffer;
 }
+
+shared_ptr<IntBuffer> DownSample(shared_ptr<IntBuffer>& buffer) {
+	shared_ptr<IntBuffer> newBuffer = make_shared<IntBuffer>(buffer->get_width() * 0.5f, buffer->get_height() * 0.5f);
+	for (size_t x = 0; x < newBuffer->get_width(); x++)
+	{
+		for (size_t y = 0; y < newBuffer->get_height(); y++) {
+			RGBColor x1 = RGBColor(buffer->tex2DScreenSpace(x * 2, y * 2));
+			RGBColor x2 = RGBColor(buffer->tex2DScreenSpace(x * 2 + 1, y * 2));
+			RGBColor y1 = RGBColor(buffer->tex2DScreenSpace(x * 2, y * 2 + 1));
+			RGBColor y2 = RGBColor(buffer->tex2DScreenSpace(x * 2 + 1, y * 2 + 1));
+			newBuffer->set(x, y, (x1 * 0.25f + x2 * 0.25f + y1 * 0.25f + y2 * 0.25f).toRGBInt());
+		}
+	}
+	return newBuffer;
+}
+

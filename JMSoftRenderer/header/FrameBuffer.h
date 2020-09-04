@@ -8,12 +8,17 @@ template <class T>
 class FrameBuffer {
 protected:
 	size_t width, height;
+	float texelSizeX, texelSizeY;// 1 / wieth height
 	size_t size;
 	float aspect;
 	T* buffer;
 
 public:
-	FrameBuffer(size_t width = 2, size_t height = 2) : width(width), height(height), size(width* height), aspect((float)width / height) {
+	FrameBuffer(size_t width = 2, size_t height = 2) :
+		width(width), height(height),
+		texelSizeX(1.0f / width), texelSizeY(1.0f / height),
+		size(width* height),
+		aspect((float)width / height) {
 		buffer = new T[size];
 	}
 	~FrameBuffer() {
@@ -22,6 +27,8 @@ public:
 
 	inline size_t get_width() const { return width; }
 	inline size_t get_height() const { return height; }
+	inline float get_texelSizeX() const { return texelSizeX; }
+	inline float get_texelSizeY() const { return texelSizeY; }
 	inline size_t get_size() const { return size; }
 	inline float get_aspect() const { return aspect; }
 
@@ -81,35 +88,32 @@ typedef FrameBuffer<int> IntBuffer;
 typedef FrameBuffer<RGBColor> ColorBuffer;
 
 shared_ptr<IntBuffer> CreateTexture(const char* filename);
-IntBuffer& DownSample(IntBuffer& buffer) {
-	IntBuffer newBuffer = IntBuffer(buffer.get_width() * 0.5f, buffer.get_height() * 0.5f);
-	for (size_t x = 0; x < newBuffer.get_width(); x++)
-	{
-		for (size_t y = 0; y < newBuffer.get_height(); y++) {
-			RGBColor x1 = RGBColor(buffer.tex2DScreenSpace(x * 2, y * 2));
-			RGBColor x2 = RGBColor(buffer.tex2DScreenSpace(x * 2 + 1, y * 2));
-			RGBColor y1 = RGBColor(buffer.tex2DScreenSpace(x * 2, y * 2 + 1));
-			RGBColor y2 = RGBColor(buffer.tex2DScreenSpace(x * 2 + 1, y * 2 + 1));
-			newBuffer.set(x, y, (x1 * 0.25f + x2 * 0.25f + y1 * 0.25f + y2 * 0.25f).toRGBInt());
-		}
-	}
-	return newBuffer;
-}
+shared_ptr<IntBuffer> DownSample(shared_ptr<IntBuffer>& buffer);
 
 class MipMap {
 private:
-	IntBuffer maps[5];
+	shared_ptr<IntBuffer> maps[5];
 
 public:
-	MipMap(IntBuffer& buffer) {
+	MipMap() { maps[0] = nullptr; }
+	MipMap(shared_ptr<IntBuffer>& buffer) {
 		maps[0] = buffer;
-		maps[1] = DownSample(buffer);
-		maps[2] = DownSample(maps[1]);
-		maps[4] = DownSample(maps[3]);
-		maps[3] = DownSample(maps[2]);
+		if (buffer != nullptr) {
+			maps[1] = DownSample(buffer);
+			maps[2] = DownSample(maps[1]);
+			maps[3] = DownSample(maps[2]);
+			maps[4] = DownSample(maps[3]);
+		}
 	}
 	~MipMap() {}
 
-	IntBuffer& operator[](size_t mipmapLevel) { return maps[Math::clamp(mipmapLevel, 0, 4)]; }
+	inline RGBColor& SampleMipmap(Vector2& uv, Vector2& dx, Vector2& dy) {
+		float px = maps[0]->get_texelSizeX() * (abs(dx.x) + abs(dx.y));
+		float py = maps[0]->get_texelSizeY() * (abs(dy.x) + abs(dy.y));
+		size_t lod = (int)Math::clamp(0.5f * log2(MAX(px * px, py * py)), 0, 4);// BUG
+		return RGBColor().setRGBInt(maps[lod]->tex2D(uv.x, uv.y)) / (lod + 1);
+	}
+	bool operator!=(void* ptr) { return maps != ptr; }
+	//IntBuffer& operator[](size_t mipmapLevel) { return maps[Math::clamp(mipmapLevel, 0, 4)]; }
 };
 

@@ -4,7 +4,7 @@
 
 using namespace std;
 
-void addMesh(Scene& scene, vector<objl::Mesh> objMeshes, shared_ptr<IntBuffer> texture, RGBColor color = Colors::White) {
+void addMesh(Scene& scene, vector<objl::Mesh> objMeshes, shared_ptr<IntBuffer> texture = nullptr, RGBColor color = Colors::White) {
 	for (auto& objMesh : objMeshes)
 	{
 		Mesh mesh;
@@ -19,7 +19,7 @@ void addMesh(Scene& scene, vector<objl::Mesh> objMeshes, shared_ptr<IntBuffer> t
 			mesh.vertices.push_back(v);
 		}
 		mesh.indices = objMesh.Indices;
-		mesh.texture = texture;
+		mesh.texture = MipMap(texture);
 		mesh.color = color;
 		scene.addMesh(mesh);
 	}

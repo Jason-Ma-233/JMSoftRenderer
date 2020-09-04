@@ -29,7 +29,7 @@ private:
 	ProjectionMethod projectionMethod = ProjectionMethod::Perspective;
 
 	////       当前渲染的状态变量       ////
-	shared_ptr<IntBuffer> currentTexture;						// 当前Mesh使用的纹理
+	MipMap currentTexture;						// 当前Mesh使用的纹理
 	ShadeFunc currentShadeFunc;									// 当前Mesh使用的着色函数
 	RGBColor currentColor;										// 当前Mesh的颜色
 	void (Pipeline::* currentRasterizeScanlineFunc)(Scanline&);	// 当前的扫描线光栅化函数指针
@@ -53,7 +53,7 @@ private:
 	void rasterizeTriangle(const SplitedTriangle& st);
 	// 对一个三角形变换、裁剪、生成扫描线
 	void renderTriangle(const Vertex* v[3]);
-	void shading(TVertex& v, RGBColor& c);
+	void shading(TVertex& v, RGBColor& c, Vector2 & dx, Vector2& dy);
 
 	// 画像素点(会检查越界)
 	inline void drawPixel(int x, int y, const RGBColor& color) {

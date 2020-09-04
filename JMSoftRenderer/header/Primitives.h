@@ -23,7 +23,7 @@ typedef function<
 struct Mesh {
 	vector<Vertex> vertices;
 	vector<unsigned int> indices;
-	shared_ptr<IntBuffer> texture;
+	MipMap texture;
 	ShadeFunc shadeFunc;
 	RGBColor color;
 };
@@ -113,6 +113,7 @@ struct TVertex {
 struct Scanline {
 	TVertex v0, step;
 	int x0, x1, y;
+	Vector2 dy;
 };
 
 // 切割后的三角形组

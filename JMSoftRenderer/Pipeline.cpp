@@ -2,7 +2,7 @@
 #include "header/Shader.h"
 #include <algorithm>
 
-void Pipeline::shading(TVertex& v, RGBColor& c) {
+void Pipeline::shading(TVertex& v, RGBColor& c, Vector2& dx, Vector2& dy) {
 	// Shadowmap sampling
 	float shadowAttenuation = 1;
 	if (enableShadow) {
@@ -21,7 +21,7 @@ void Pipeline::shading(TVertex& v, RGBColor& c) {
 
 	// texture samping
 	c = currentColor;
-	if (currentTexture != NULL) c *= RGBColor().setRGBInt(currentTexture->tex2D(v.texCoord.x, v.texCoord.y));
+	if (currentTexture != nullptr) c *= currentTexture.SampleMipmap(v.texCoord, dx, dy);
 
 	Shader::PhysicallyBasedShading(c, roughness, metallic, N, L, V, NdotL);
 	c *= dirLight.intensity * dirLight.color * NdotL * shadowAttenuation;
@@ -46,7 +46,7 @@ void Pipeline::rasterizeScanline(Scanline& scanline) {
 			v = vi * (1.0f / rhw);// 线性插值后恢复
 
 			// shading
-			shading(v, c);
+			shading(v, c, scanline.step.texCoord, scanline.dy);
 
 			fbPtr[x] = c.toRGBInt();
 			zbPtr[x] = rhw;
@@ -82,7 +82,7 @@ void Pipeline::rasterizeTriangle(const SplitedTriangle& st) {
 		int y0 = (int)st.bottom.point.y + 1;
 		int y1 = (int)st.left.point.y;
 		float yl = st.left.point.y - st.bottom.point.y;
-
+		auto dy = (st.left.texCoord - st.bottom.texCoord) / MAX(abs(y1 - y0), 1);
 
 		for (int y = y0; y <= y1; y++) {
 			float factor = (y - st.bottom.point.y) / yl;
@@ -92,6 +92,7 @@ void Pipeline::rasterizeTriangle(const SplitedTriangle& st) {
 			scanline.x0 = (int)left.point.x;
 			scanline.x1 = (int)right.point.x;
 			scanline.y = y;
+			scanline.dy = dy;
 			scanline.v0 = left;
 			scanline.step = (right - left) * (1.0f / (right.point.x - left.point.x));
 			(this->*currentRasterizeScanlineFunc)(scanline);
@@ -101,6 +102,7 @@ void Pipeline::rasterizeTriangle(const SplitedTriangle& st) {
 		int y0 = (int)st.left.point.y + 1;
 		int y1 = (int)st.top.point.y;
 		float yl = st.top.point.y - st.left.point.y;
+		auto dy = (st.top.texCoord - st.left.texCoord) / MAX(abs(y1 - y0), 1);
 
 		for (int y = y0; y <= y1; y++) {
 			float factor = (y - st.left.point.y) / yl;
@@ -110,6 +112,7 @@ void Pipeline::rasterizeTriangle(const SplitedTriangle& st) {
 			scanline.x0 = (int)left.point.x;
 			scanline.x1 = (int)right.point.x;
 			scanline.y = y;
+			scanline.dy = dy;
 			scanline.v0 = left;
 			scanline.step = (right - left) * (1.0f / (right.point.x - left.point.x));
 			(this->*currentRasterizeScanlineFunc)(scanline);
