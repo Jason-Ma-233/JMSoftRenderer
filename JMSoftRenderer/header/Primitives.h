@@ -113,7 +113,7 @@ struct TVertex {
 struct Scanline {
 	TVertex v0, step;
 	int x0, x1, y;
-	Vector2 dy;
+	Vector2 dx, dy;
 };
 
 // 切割后的三角形组

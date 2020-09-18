@@ -21,7 +21,7 @@ void Pipeline::shading(TVertex& v, RGBColor& c, Vector2& dx, Vector2& dy) {
 
 	// texture samping
 	c = currentColor;
-	if (currentTexture != nullptr) c *= currentTexture.SampleMipmap(v.texCoord, dx, dy);
+	if (!currentTexture.isEmpty()) c *= currentTexture.SampleMipmap(v.texCoord, dx, dy, mipmapLevelOffset);
 
 	Shader::PhysicallyBasedShading(c, roughness, metallic, N, L, V, NdotL);
 	c *= dirLight.intensity * dirLight.color * NdotL * shadowAttenuation;
@@ -42,11 +42,12 @@ void Pipeline::rasterizeScanline(Scanline& scanline) {
 	for (int x = x0; x <= x1; x++) {
 		// 透视投影比较rhw，正交则直接比较像素深度
 		float rhw = projectionMethod == ProjectionMethod::Perspective ? vi.rhw : 1.0f / vi.point.z;
+		float rhw_inv = 1.0f / rhw;
 		if (rhw >= zbPtr[x]) {  // 比较深度
-			v = vi * (1.0f / rhw);// 线性插值后恢复
+			v = vi * rhw_inv;// 线性插值后恢复
 
 			// shading
-			shading(v, c, scanline.step.texCoord, scanline.dy);
+			shading(v, c, scanline.dx * rhw_inv, scanline.dy * rhw_inv);
 
 			fbPtr[x] = c.toRGBInt();
 			zbPtr[x] = rhw;
@@ -82,7 +83,10 @@ void Pipeline::rasterizeTriangle(const SplitedTriangle& st) {
 		int y0 = (int)st.bottom.point.y + 1;
 		int y1 = (int)st.left.point.y;
 		float yl = st.left.point.y - st.bottom.point.y;
-		auto dy = (st.left.texCoord - st.bottom.texCoord) / MAX(abs(y1 - y0), 1);
+		auto median_left = Math::lerp(st.left, st.bottom, 0.5),
+			median_right = Math::lerp(st.right, st.bottom, 0.5);
+		auto dx = (median_right.texCoord - median_left.texCoord) / (abs(median_right.point.x - median_left.point.x) + 1);
+		auto dy = (Math::lerp(st.left.texCoord, st.right.texCoord, 0.5) - st.bottom.texCoord) / (abs(y1 - y0) + 1);
 
 		for (int y = y0; y <= y1; y++) {
 			float factor = (y - st.bottom.point.y) / yl;
@@ -92,6 +96,7 @@ void Pipeline::rasterizeTriangle(const SplitedTriangle& st) {
 			scanline.x0 = (int)left.point.x;
 			scanline.x1 = (int)right.point.x;
 			scanline.y = y;
+			scanline.dx = dx;
 			scanline.dy = dy;
 			scanline.v0 = left;
 			scanline.step = (right - left) * (1.0f / (right.point.x - left.point.x));
@@ -102,7 +107,10 @@ void Pipeline::rasterizeTriangle(const SplitedTriangle& st) {
 		int y0 = (int)st.left.point.y + 1;
 		int y1 = (int)st.top.point.y;
 		float yl = st.top.point.y - st.left.point.y;
-		auto dy = (st.top.texCoord - st.left.texCoord) / MAX(abs(y1 - y0), 1);
+		auto median_left = Math::lerp(st.left, st.top, 0.5),
+			median_right = Math::lerp(st.right, st.top, 0.5);
+		auto dx = (median_right.texCoord - median_left.texCoord) / (abs(median_right.point.x - median_left.point.x) + 1);
+		auto dy = (Math::lerp(st.left.texCoord, st.right.texCoord, 0.5) - st.top.texCoord) / (abs(y1 - y0) + 1);
 
 		for (int y = y0; y <= y1; y++) {
 			float factor = (y - st.left.point.y) / yl;
@@ -112,6 +120,7 @@ void Pipeline::rasterizeTriangle(const SplitedTriangle& st) {
 			scanline.x0 = (int)left.point.x;
 			scanline.x1 = (int)right.point.x;
 			scanline.y = y;
+			scanline.dx = dx;
 			scanline.dy = dy;
 			scanline.v0 = left;
 			scanline.step = (right - left) * (1.0f / (right.point.x - left.point.x));
@@ -183,7 +192,7 @@ void Pipeline::renderTriangle(const Vertex* v[3]) {
 
 	// 简单cvv裁剪，三角形全在屏幕外则不渲染
 	int cvv[3] = { checkCVV(clipPos[0]), checkCVV(clipPos[1]), checkCVV(clipPos[2]) };
-	if (cvv[0] && cvv[1] && cvv[2]) return;
+	if (cvv[0] > 0 && cvv[1] > 0 && cvv[2] > 0) return;
 	// 背面裁剪
 	if (cross(screenPos[1] - screenPos[0], screenPos[2] - screenPos[1]).z <= 0)
 		return;

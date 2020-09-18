@@ -21,11 +21,11 @@ shared_ptr<IntBuffer> DownSample(shared_ptr<IntBuffer>& buffer) {
 	for (size_t x = 0; x < newBuffer->get_width(); x++)
 	{
 		for (size_t y = 0; y < newBuffer->get_height(); y++) {
-			RGBColor x1 = RGBColor(buffer->tex2DScreenSpace(x * 2, y * 2));
-			RGBColor x2 = RGBColor(buffer->tex2DScreenSpace(x * 2 + 1, y * 2));
-			RGBColor y1 = RGBColor(buffer->tex2DScreenSpace(x * 2, y * 2 + 1));
-			RGBColor y2 = RGBColor(buffer->tex2DScreenSpace(x * 2 + 1, y * 2 + 1));
-			newBuffer->set(x, y, (x1 * 0.25f + x2 * 0.25f + y1 * 0.25f + y2 * 0.25f).toRGBInt());
+			RGBColor x1 = RGBColor(buffer->tex2DScreenSpace(x * 2, y * 2)).gammaCorrect_inv(2.2);
+			RGBColor x2 = RGBColor(buffer->tex2DScreenSpace(x * 2 + 1, y * 2)).gammaCorrect_inv(2.2);
+			RGBColor y1 = RGBColor(buffer->tex2DScreenSpace(x * 2, y * 2 + 1)).gammaCorrect_inv(2.2);
+			RGBColor y2 = RGBColor(buffer->tex2DScreenSpace(x * 2 + 1, y * 2 + 1)).gammaCorrect_inv(2.2);
+			newBuffer->set(x, y, (x1 * 0.25f + x2 * 0.25f + y1 * 0.25f + y2 * 0.25f).gammaCorrect(2.2).toRGBInt());
 		}
 	}
 	return newBuffer;

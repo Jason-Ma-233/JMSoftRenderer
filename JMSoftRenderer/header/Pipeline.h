@@ -16,8 +16,8 @@ enum ProjectionMethod
 class Pipeline {
 public:
 	bool enableShadow;
-	// tmp
-	float roughness, metallic;
+	int mipmapLevelOffset = 0;
+	float roughness = 0.0f, metallic = 0.0f;
 
 private:
 	////          缓冲区Buffer          ////
@@ -53,7 +53,7 @@ private:
 	void rasterizeTriangle(const SplitedTriangle& st);
 	// 对一个三角形变换、裁剪、生成扫描线
 	void renderTriangle(const Vertex* v[3]);
-	void shading(TVertex& v, RGBColor& c, Vector2 & dx, Vector2& dy);
+	void shading(TVertex& v, RGBColor& c, Vector2& dx, Vector2& dy);
 
 	// 画像素点(会检查越界)
 	inline void drawPixel(int x, int y, const RGBColor& color) {

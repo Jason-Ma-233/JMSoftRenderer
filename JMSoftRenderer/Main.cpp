@@ -34,9 +34,8 @@ int	main(void) {
 
 	// Load .obj File
 	objl::Loader loader;
-	//const char* texture_path = "../../../../models/spot/uv_texture.png";
-	const char* texture_path = "../../../../models/spot/spot_texture.png";
-	//const char* obj_path = "../../../../models/spot/triangle.obj";
+	const char* texture_path = "../../../../models/spot/checkerboard.png";
+	//const char* texture_path = "../../../../models/spot/spot_texture.png";
 	//const char* obj_path = "../../../../models/spot/_spot_triangulated_good.obj";
 	const char* obj_path = "../../../../models/spot/sphere.obj";
 	auto tex = CreateTexture(texture_path);
@@ -49,13 +48,11 @@ int	main(void) {
 	scene.setLight(
 		Vector3(1.0f, 1.0f, -1.0f),
 		4.0f, 4.0f, 10.0f,
-		//Matrix().rotate(0, 1, 0, 70.0f).rotate(1, 0, 0, -60.0f).translate(-0.2f, 0.3f, 3.5f),
-		//4.0f, 4.0f, 10.0f,
 		2.0f, RGBColor(0.98f, 0.92f, 0.89f)
 	);
 
 	scene.setViewMatrix(Matrix().translate(0, 0, 2.5f));
-	scene.setPerspective(60.0f, colorBuffer.get_aspect(), 0.1f, 10.0f);
+	scene.setPerspective(60.0f, colorBuffer.get_aspect(), 0.1f, 100.0f);
 
 
 	addMesh(scene, loader.LoadedMeshes, tex);
@@ -71,7 +68,11 @@ int	main(void) {
 		pipeline.renderMeshes(scene);
 
 		memcpy(window(), colorBuffer(), colorBuffer.get_size() * sizeof(int));
-		window.title = (std::ostringstream() << "Roughness:" << pipeline.roughness << "  Metallic:" << pipeline.metallic).str();
+		window.title = (std::ostringstream() <<
+			"Roughness:" << pipeline.roughness << 
+			"  Metallic:" << pipeline.metallic <<
+			"  MipmapLevelOffset:" << pipeline.mipmapLevelOffset
+			).str();
 		window.update();
 
 		// input
@@ -89,6 +90,8 @@ int	main(void) {
 		if (window.is_key(VK_RIGHT)) pipeline.roughness += 0.01f;
 		if (window.is_key(VK_UP)) pipeline.metallic += 0.01f;
 		if (window.is_key(VK_DOWN)) pipeline.metallic -= 0.01f;
+		if (window.is_key('Z')) pipeline.mipmapLevelOffset--;
+		if (window.is_key('X')) pipeline.mipmapLevelOffset++;
 		pipeline.roughness = Math::clamp(pipeline.roughness);
 		pipeline.metallic = Math::clamp(pipeline.metallic);
 	}

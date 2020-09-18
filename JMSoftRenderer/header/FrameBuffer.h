@@ -63,10 +63,8 @@ public:
 
 	// texture sampling
 	T tex2DScreenSpace(float u, float v) {
-		int x = u, y = v;// min point
-		int x2 = x + 1, y2 = y + 1;// max point
-		if (x<0 || y<0 || x>width - 1 || y>height - 1)return 0;
-		x2 = x2 == width ? 0 : x2, y2 = y2 == height ? 0 : y2;
+		int x = (int)u % width, y = (int)v % width;// min point
+		int x2 = (x + 1) % width, y2 = (y + 1) % width;// max point
 
 		auto leftBottom = buffer[y * width + x],
 			leftTop = buffer[y2 * width + x],
@@ -92,28 +90,38 @@ shared_ptr<IntBuffer> DownSample(shared_ptr<IntBuffer>& buffer);
 
 class MipMap {
 private:
-	shared_ptr<IntBuffer> maps[5];
+	vector<shared_ptr<IntBuffer>> maps;
 
 public:
-	MipMap() { maps[0] = nullptr; }
+	MipMap() { maps.clear(); maps.push_back(nullptr); }
 	MipMap(shared_ptr<IntBuffer>& buffer) {
-		maps[0] = buffer;
+		maps.clear();
+		maps.push_back(buffer);
 		if (buffer != nullptr) {
-			maps[1] = DownSample(buffer);
-			maps[2] = DownSample(maps[1]);
-			maps[3] = DownSample(maps[2]);
-			maps[4] = DownSample(maps[3]);
+			while (maps[maps.size() - 1]->get_width() > 1)
+			{
+				maps.push_back(DownSample(maps[maps.size() - 1]));
+			}
 		}
 	}
 	~MipMap() {}
 
-	inline RGBColor& SampleMipmap(Vector2& uv, Vector2& dx, Vector2& dy) {
+	inline RGBColor& SampleMipmap(Vector2& uv, Vector2& dx, Vector2& dy, int levelOffset = 0) {
+		/*
 		float px = maps[0]->get_texelSizeX() * (abs(dx.x) + abs(dx.y));
 		float py = maps[0]->get_texelSizeY() * (abs(dy.x) + abs(dy.y));
-		size_t lod = (int)Math::clamp(0.5f * log2(MAX(px * px, py * py)), 0, 4);// BUG
-		return RGBColor().setRGBInt(maps[lod]->tex2D(uv.x, uv.y)) / (lod + 1);
+		size_t lod = (int)Math::clamp(0.5f * log2(MAX(px * px, py * py)), 0, maps.size() - 1);
+		*/
+		float px = maps[0]->get_width() * (abs(dx.x) + abs(dx.y));
+		float py = maps[0]->get_height() * (abs(dy.x) + abs(dy.y));
+		size_t lod = (int)Math::clamp(log2(MAX(px, py)) + levelOffset, 0, maps.size() - 1);
+		if (lod > 1)
+			lod = lod;
+		//lod = Math::clamp(lod, 0, maps.size() - 1);
+		//return RGBColor().setRGBInt(maps[lod]->tex2D(uv.x, uv.y));
+		return RGBColor((lod - 1.0f)*0.5f);
 	}
-	bool operator!=(void* ptr) { return maps != ptr; }
+	inline bool isEmpty() { return maps[0] == nullptr; }
 	//IntBuffer& operator[](size_t mipmapLevel) { return maps[Math::clamp(mipmapLevel, 0, 4)]; }
 };
 
